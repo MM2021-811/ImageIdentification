@@ -7,6 +7,7 @@ import json
 import uuid
 from util import vearchutil
 import math
+import argparse
 
 from config.logging import LOGGING_CONF
 import logging
@@ -69,7 +70,23 @@ def load_data_to_vearch(data_path="./data/zerobox",model_name="vgg16"):
         logger.debug(res)
         # break
 
+def main():
+    # Training settings
+    parser = argparse.ArgumentParser(description='Loading data into vearch')
+    parser.add_argument('--data-path', type=str, default="./data/zerobox", metavar='P',
+                        help='dataset path (default: ./data/zerobox)')
+    parser.add_argument('--model-name', type=str, default="vgg16", metavar='M',
+                        help='model name(default: vgg16)')
+    parser.add_argument('--create-meta', action='store_true', default=False,
+                        help='recreate meta file')
+
+    args = parser.parse_args()
+    create_meta = args.create_meta
+    if create_meta:
+        create_dataset_metadata()
+    
+    load_data_to_vearch(data_path=args.data_path,model_name=args.model_name)
+
 if __name__ == '__main__':
     print("This process will create metadata and index them in vearch")
-    create_dataset_metadata()
-    load_data_to_vearch()
+    main()

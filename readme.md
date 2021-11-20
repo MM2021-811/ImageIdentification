@@ -61,14 +61,16 @@ docker-compose up -d
 ```
 
 ## Prepare dataset
-1. download [zeroboxbottles](https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/) dataset
+1. download [zeroboxbottles](https://drive.google.com/file/d/1yC9ZZL50K5LmElnbD2Yu8gcLsfgqg1M6/view?usp=sharing) dataset
 2. unzip the dataset to ./data. After zip the folder should be `./data/zerobx/`
    
 ## Index subset image
-run `python util/load_bottles.py`. This script will load subset and index them in vearch. 
+run `python util/load_bottles.py`. This script will load images and index them in vearch. 
 This step may requires to run based on the test cases. When using different model(vgg, resnet and etc) must index them with same model
 
 ## Test different model
+The test images are listed in meta_test.json. 
+
 Highlevel steps
 1. create new model and put under `./util/image_extract/`
 2. call `load_data_to_vearch(data_path,model_name)`
