@@ -18,9 +18,9 @@ util = VearchUtil(model_name="vgg16")
 # pprint(item)
 
 testutil = TestUtil(model_name="vgg16")
-(cmatrix,wrong_results) = testutil.test()
+(accuracy, cmatrix,wrong_results) = testutil.test()
 
 pprint(cmatrix)
-
+pprint(f"Final accuracy: {accuracy}")
 print("Wrong results:")
 pprint(wrong_results)
