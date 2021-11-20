@@ -1,0 +1,9 @@
+torch
+torchvision
+requests
+datasets
+ipykernel
+opencv-python
+pillow
+matplotlib
+albumentations

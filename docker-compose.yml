@@ -1,0 +1,50 @@
+version: '3'
+
+volumes:
+  local_postgres_data:
+    driver: local
+  local_postgres_data_backups:
+    driver: local
+  vearch_data01:
+    driver: local
+  vearch_logs01:
+    driver: local
+
+networks:
+  webapp_network:
+    driver: bridge
+
+services:
+  vearch:
+    build:
+      context: ./vearch
+      dockerfile: Dockerfile
+    image: ziyunxiao/image_search_vearch:latest
+    volumes:
+      # - ./vearch/config.toml:/vearch/config.toml
+      - vearch_data01:/data
+      - vearch_logs01:/logs
+    # ports:
+    #   - 8817:8817
+    #   - 9001:9001
+    networks:
+      - webapp_network
+
+  vearch_plugin:
+    build:
+      context: ./vearch_plugin
+      dockerfile: Dockerfile.NonChina
+    image: ziyunxiao/image_search_vearch_plugin:latest
+    command: ["/app/bin/run.sh", "image"]
+    depends_on:
+      - vearch
+    environment:
+      VEARCH_HOST: "vearch"
+    volumes:
+      - ./api/test_images:/images
+      - ./webapp/media:/upload_images
+      - ./config/vearch_config.py:/app/src/config.py
+    ports:
+      - 4101:4101
+    networks:
+      - webapp_network
