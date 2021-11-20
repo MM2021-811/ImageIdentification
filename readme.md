@@ -1,4 +1,4 @@
-# ImageSearch
+# Nearly identical Image Indentification
 This repository is created for MM program at UofA for student projects. 
 
 ## license
@@ -8,16 +8,7 @@ The license for this repo is under MIT license. The dependable libraries and pac
 
 ## Acredit
 1. This repository uses [vearch](https://github.com/vearch/vearch) and [python-algorithm-plugin](https://github.com/vearch/python-algorithm-plugin) 
-2. [Food101 dataset](https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/)
-```
-@inproceedings{bossard14,
-  title = {Food-101 -- Mining Discriminative Components with Random Forests},
-  author = {Bossard, Lukas and Guillaumin, Matthieu and Van Gool, Luc},
-  booktitle = {European Conference on Computer Vision},
-  year = {2014}
-}
-```
-3. [albumentations](https://github.com/albumentations-team/albumentations)
+2. [albumentations](https://github.com/albumentations-team/albumentations)
 ```
 @Article{info11020125,
     AUTHOR = {Buslaev, Alexander and Iglovikov, Vladimir I. and Khvedchenya, Eugene and Parinov, Alex and Druzhinin, Mikhail and Kalinin, Alexandr A.},
@@ -51,6 +42,7 @@ All commands list here are sample commands. And this is based on Linux(Ubuntu). 
 * 
 
 ## Bring up Vearch
+If you need change verach plugin port, you can find the settings in `docker-compose.yml`. If you do make the change, you also need update VEARCH_URL in `config/settings.py`
 
 ```
 docker-compose pull
@@ -69,11 +61,11 @@ docker-compose up -d
 ```
 
 ## Prepare dataset
-1. download [food101](https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/) dataset
-2. unzip the dataset to ./data. After zip the folder should be `./data/food-101/`
+1. download [zeroboxbottles](https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/) dataset
+2. unzip the dataset to ./data. After zip the folder should be `./data/zerobx/`
    
 ## Index subset image
-run `python util/load_f101.py`. This script will load subset and index them in vearch. 
+run `python util/load_bottles.py`. This script will load subset and index them in vearch. 
 This step may requires to run based on the test cases. When using different model(vgg, resnet and etc) must index them with same model
 
 ## Test different model
@@ -94,7 +86,7 @@ Highlevel steps
           {
         "term":{
           "operator":"and",
-          "keyword":["restaurantb"] 
+          "keyword":["somekeyword"] 
         }
       }  
       ],

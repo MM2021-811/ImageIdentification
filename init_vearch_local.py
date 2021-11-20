@@ -1,27 +1,23 @@
 import json
 import requests
-from util.load_f101 import create_food101_subset, load_data_to_vearch
+from config.settings import VEARCH_URL
 
 # SERVER_URL = "http://vearch_plugin:4101"
-SERVER_URL = "http://localhost:4101"
+SERVER_URL = VEARCH_URL
 
 
 def init_vearch():
-    # self.token = "Token cb6f6b82bcd37e02ecacb16dfdb0be3e3ae6fa68"
-    # self.server_url = "http://localhost:8000/api/foods"
-    # self.header = {"Authorization": self.token}
-
     # create db
     header = {"Content-Type": "application/json"}
     url = f"{SERVER_URL}/db/_create"
-    data = {"name": "foods"}
+    data = {"name": "bottle"}
     response = requests.put(url, json=data, headers=header)
     print(response.text)
 
     # create space
-    url = f"{SERVER_URL}/space/foods/_create"
+    url = f"{SERVER_URL}/space/bottle/_create"
     data = {
-        "name": "foods",
+        "name": "bottle",
         "partition_num": 1,
         "replica_num": 1,
         "engine": {
@@ -50,8 +46,8 @@ def init_vearch():
     print(response.content)
 
     # verify be list details
-    url = f"{SERVER_URL}/space/foods/foods"
-    data = {"name": "foods"}
+    url = f"{SERVER_URL}/space/bottle/bottle"
+    data = {"name": "bottle"}
     response = requests.get(url, json=data, headers=header)
     print(response.content)
 
