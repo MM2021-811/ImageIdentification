@@ -35,7 +35,7 @@ class VearchUtil:
     def extract_feature(self, image):
         return self.vearchutil.extrac_feature(image)
 
-    def add_image_index(self, image_name: str, sid: str, keyword: str, tags: list = [], uuid: str = None):
+    def add_image_index(self, image_name: str, sid: str, keyword: str="", tags: list = [], uuid: str = None):
         """Index new images
 
         Args:
@@ -161,7 +161,7 @@ class VearchUtil:
             item["data"] = f_hit.get("_source")
         else:
             item = item = dict()
-            item["score"] = 0
+            item["score"] = -1
             item["vearch_id"] = None
             item["data"] = ""
 

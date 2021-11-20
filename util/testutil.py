@@ -1,0 +1,61 @@
+from tests.test1 import test_logger
+from util.vearchutil import VearchUtil
+from pprint import pprint
+import json
+import numpy as np
+import pandas as pd
+
+from config.logging import LOGGING_CONF
+import logging
+import logging.config
+
+logging.config.dictConfig(LOGGING_CONF)
+logger = logging.getLogger(__name__)
+
+class TestUtil(object):
+  def __init__(self,model_name) -> None:
+    self.model_name = model_name
+    self.data_path = "./data/zerobox"
+    self.util = VearchUtil(model_name)
+
+  def test(self):
+    logger.info(f"TestUtil test {self.model_name}")
+
+    meta = json.load(open(f"{self.data_path}/meta_test.json","r"))
+    results = list() 
+    c_class = {"notfound"}
+    for item in meta:
+      c_class.add(item["class"])
+      fname = f"{self.data_path}/images/{item['class']}/{item['file_name']}"
+
+      result = dict()
+      result["org_class"] = item["class"]
+      result["org_file_name"] = fname
+      ret = self.util.search_by_image(image = fname)
+      if ret["score"] != -1:
+        #found result
+        result["test_class"] = ret["data"]["sid"]
+        result["test_file_name"] = ret["data"]["image_name"]
+      else:
+        result["test_class"] = "-1" # notfound
+        result["test_file_name"] = ""
+      
+      results.append(result)
+
+
+    #create consusion matrix
+    # go through test image, random pick a class from mapping
+    n_class = len(c_class)
+    cmatrix = pd.DataFrame(np.zeros((n_class, n_class)))
+    cmatrix.columns = c_class
+    cmatrix.index = c_class
+
+    wrong_results = []
+    for item in results:
+      target_label = item["org_class"]
+      found_label = item["test_class"]
+      cmatrix.loc[target_label,found_label] += 1
+      if target_label != found_label:
+          wrong_results.append(item["org_file_name"])
+    
+    return (cmatrix,wrong_results)

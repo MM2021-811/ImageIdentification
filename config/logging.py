@@ -31,7 +31,7 @@ LOGGING_CONF = {
         },
         "util": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": False,
         },
     },

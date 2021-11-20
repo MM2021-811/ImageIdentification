@@ -8,3 +8,5 @@ pillow
 matplotlib
 albumentations
 argparse
+numpy
+pandas
