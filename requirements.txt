@@ -10,3 +10,5 @@ albumentations
 argparse
 numpy
 pandas
+timm
+torchsummary
