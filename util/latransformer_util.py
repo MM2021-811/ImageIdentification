@@ -52,15 +52,6 @@ class LaTransformerUtil(object):
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        # training parameters
-        # self.batch_size = 32
-        # self.num_epochs = 30
-        # self.lr = 3e-4
-        # self.gamma = 0.7
-        # self.unfreeze_after = 2
-        # self.lr_decay = 0.8
-        # self.lmbd = 8
-
         self._init_data_load()
 
     def _init_data_load(self):
@@ -80,9 +71,9 @@ class LaTransformerUtil(object):
             "val": transforms.Compose(transform_val_list),
         }
 
-    def load_dateset(self):
+    def load_dateset(self,data_dir):
         image_datasets = {}
-        data_dir = "data/Market-Pytorch/Market/"
+        # data_dir = "data/Market-Pytorch/Market/"
 
         image_datasets["train"] = datasets.ImageFolder(
             os.path.join(data_dir, "train"), self.data_transforms["train"]
@@ -168,8 +159,8 @@ class LaTransformerUtil(object):
         loader,
         optimizer,
         loss_fn,
-        print_message=True,
-    ):
+        print_message=True):
+
         batch_time_m = AverageMeter()
         data_time_m = AverageMeter()
 
@@ -230,7 +221,7 @@ class LaTransformerUtil(object):
                 param.requires_grad = True
         return model
 
-    def Train(
+    def train(
         self,
         num_epochs=30,
         batch_size=32,
@@ -239,8 +230,7 @@ class LaTransformerUtil(object):
         unfreeze_after=2,
         lr_decay=0.8,
         lmbd=8,
-        print_message=True,
-    ):
+        print_message=True):
 
         # ## Training Loop
         # Create LA Transformer

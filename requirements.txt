@@ -12,3 +12,6 @@ numpy
 pandas
 timm
 torchsummary
+transformers
+iprogress
+ipywidgets

@@ -1,4 +1,5 @@
 import json
+from json.decoder import JSONDecodeError
 import os
 from datetime import datetime
 from typing import List
@@ -50,10 +51,11 @@ class VearchUtil:
         """
         if uuid is None:
             uuid = uuid4().__str__()
-
+        
+        # vearch is expecting 512 features
         data = {
             "image_name": image_name,
-            "image": {"feature": self.extract_feature(image_name)},
+            "image": {"feature": self.extract_feature(image_name)[:512]},
             "model_name": self.vearchutil.model_name,
             "keyword": keyword,
             "uuid": uuid,
@@ -150,7 +152,12 @@ class VearchUtil:
         if response.status_code != 200:
             raise VearchApiError(response.text)
 
-        data = json.loads(response.text)
+        try:
+            data = json.loads(response.text)
+        except JSONDecodeError as ex:
+            data = json.loads(response.text + "}")
+
+            
         found_total = data.get("hits").get("total",0)
         if(found_total > 0):
             hits = data.get("hits").get("hits")
