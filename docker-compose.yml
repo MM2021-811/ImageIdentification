@@ -5,10 +5,10 @@ volumes:
     driver: local
   local_postgres_data_backups:
     driver: local
-  vearch_data01:
-    driver: local
-  vearch_logs01:
-    driver: local
+  # vearch_data01:
+  #   driver: local
+  # vearch_logs01:
+  #   driver: local
 
 networks:
   webapp_network:
@@ -22,8 +22,10 @@ services:
     image: ziyunxiao/image_search_vearch:latest
     volumes:
       # - ./vearch/config.toml:/vearch/config.toml
-      - vearch_data01:/data
-      - vearch_logs01:/logs
+      # - vearch_data01:/data
+      # - vearch_logs01:/logs
+      - ./data/vearch/data:/data
+      - ./data/vearch/logs:/logs
     # ports:
     #   - 8817:8817
     #   - 9001:9001

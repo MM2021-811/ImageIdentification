@@ -3,6 +3,7 @@ from util.vearchutil import VearchUtil
 from util.testutil import TestUtil
 from pprint import pprint
 from util.load_bottles import load_data_to_vearch
+from init_vearch_local import create_space,delete_space
 
 # create_food101_subset()
 # load_data_to_vearch()
@@ -30,5 +31,9 @@ def test_vit16():
 def test_load():
     load_data_to_vearch(model_name="vgg16")
 
+def test_alexnet():
+    delete_space("bottle","alexnet")
+    create_space("bottle","alexnet",feature_dim=256)
+    load_data_to_vearch(model_name="alexnet")
 
-test_load()
+test_alexnet()
