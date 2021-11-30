@@ -28,7 +28,7 @@ def test_vit16():
     pprint(wrong_results)
 
 def test_load():
-    load_data_to_vearch(model_name="vit16")
+    load_data_to_vearch(model_name="vgg16")
 
 
 test_load()
