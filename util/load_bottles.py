@@ -25,11 +25,10 @@ logger = logging.getLogger(__name__)
 # naming convesion:
 #   folder_name == class_name == sid
 
-def create_dataset_metadata(num_images = 100, test_percent=0.2):
+def create_dataset_metadata(data_path="./data/zerobox",num_images = 100, test_percent=0.2):
     """loop through each class and pick 100 images.
     """
     logger.info(f"create_dataset_metadata({num_images})")
-    data_path = f"./data/zerobox"
     classes = os.listdir(f"{data_path}/images")
     meta_train = []
     meta_test = []

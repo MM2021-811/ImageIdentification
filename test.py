@@ -31,7 +31,7 @@ def test_vit16():
 def test_load():
     load_data_to_vearch(model_name="vgg16")
 
-def test_net(model_name = "alexnet"):
+def load_net(model_name = "alexnet",data_path="./data/zerobox"):
     db_name="bottle"
     create_db(db_name)
 
@@ -43,10 +43,10 @@ def test_net(model_name = "alexnet"):
 
     delete_space("bottle",model_name)
     create_space("bottle",model_name,feature_dim=feature_dim,partition=4)
-    load_data_to_vearch(model_name=model_name)
+    load_data_to_vearch(data_path=data_path,model_name=model_name)
 
-def eval_net(model_name = "alexnet"):
-    testutil = TestUtil(model_name)
+def eval_net(model_name = "alexnet",data_path = "./data/zerobox"):
+    testutil = TestUtil(model_name,data_path)
     (accuracy, cmatrix,wrong_results) = testutil.test()
 
     pprint(cmatrix)
@@ -54,5 +54,5 @@ def eval_net(model_name = "alexnet"):
     print("Wrong results:")
     pprint(wrong_results)
 
-# test_net("vgg16")
-eval_net("vgg16")
+# load_net("vgg16",data_path="./data/zerobox_light")
+eval_net("vgg16",data_path="./data/zerobox_light")

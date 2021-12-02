@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class TestUtil(object):
-    def __init__(self, model_name) -> None:
+    def __init__(self, model_name,data_path = "./data/zerobox") -> None:
         self.model_name = model_name
-        self.data_path = "./data/zerobox"
+        self.data_path = data_path
         self.util = VearchUtil(model_name)
 
     def test(self):
