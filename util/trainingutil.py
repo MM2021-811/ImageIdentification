@@ -29,19 +29,19 @@ class AlphaBgTransform:
     def __call__(self, x):
         if x.shape[2] == 3:
             # only 3 channel remove bg and add alpha channel
-            x = self.remove_bg(x)
+            x = AlphaBgTransform.remove_bg(x)
 
         #crop
-        x= self.center_crop(x)
+        x= AlphaBgTransform.center_crop(x)
 
         # tosquare
-        x = self.to_square(x)
+        x = AlphaBgTransform.to_square(x)
 
         # resize
         x = cv2.resize(x, (224,224), interpolation = cv2.INTER_AREA)
 
         #enhance color
-        x1 = self.enhance_color(x[:,:,:-1])
+        x1 = AlphaBgTransform.enhance_color(x[:,:,:-1])
         x[:,:,:-1] = x1
 
         # basic transform for the model
@@ -57,7 +57,8 @@ class AlphaBgTransform:
 
         return x
 
-    def remove_bg(self,
+    @staticmethod
+    def remove_bg(
         data,
         model_name="u2net",
         alpha_matting=False,
@@ -101,7 +102,8 @@ class AlphaBgTransform:
 
         return cutout
     
-    def center_crop(self,x):
+    @staticmethod
+    def center_crop(x):
         arr = x[:,:,3]
         idx = np.transpose(np.nonzero(arr))
         h = x.shape[0]
@@ -116,7 +118,8 @@ class AlphaBgTransform:
 
         return croped_image
 
-    def enhance_color(self,x):
+    @staticmethod
+    def enhance_color(x):
         gamma = 0.6
         lambda_ = 0.15
         sigma=3
@@ -130,12 +133,13 @@ class AlphaBgTransform:
                                         sigma=sigma, bc=bc, bs=bs, be=be, eps=eps)
         return enhanced_image
 
-    def to_square(self,x):
+    @staticmethod
+    def to_square(x):
         (h, w,c) = x.shape
 
         # padding
         dim = max(h,w)
-        img = np.zeros((dim,dim,c))
+        img = np.zeros((dim,dim,c),dtype="uint8")
 
         if h>w:
             s_idx = (h-w)//2

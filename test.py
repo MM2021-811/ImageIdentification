@@ -60,8 +60,8 @@ def eval_net(model_name = "alexnet",data_path = "./data/zerobox"):
 def test_transform(image_name):
     image = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
 
-    transform = AlphaBgTransform()
-    img = transform(image)
+    # transform = AlphaBgTransform()
+    img = AlphaBgTransform.to_square(image)
     pprint(img.shape)
     return img
 

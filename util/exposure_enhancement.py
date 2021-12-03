@@ -212,3 +212,38 @@ def enhance_image_exposure(im: np.ndarray, gamma: float, lambda_: float, dual: b
 
     # convert to 8 bits and returns
     return np.clip(im_corrected * 255, 0, 255).astype("uint8")
+
+
+def get_under_n_over_channel(im: np.ndarray, gamma: float, lambda_: float, dual: bool = True, sigma: int = 3,
+                           bc: float = 1, bs: float = 1, be: float = 1, eps: float = 1e-3):
+    """Enhance input image, using either DUAL method, or LIME method. For more info, please see original papers.
+
+    Arguments:
+        im {np.ndarray} -- input image to be corrected.
+        gamma {float} -- gamma correction factor.
+        lambda_ {float} -- coefficient to balance the terms in the optimization problem (in DUAL and LIME).
+
+    Keyword Arguments:
+        dual {bool} -- boolean variable to indicate enhancement method to be used (either DUAL or LIME) (default: {True})
+        sigma {int} -- Spatial standard deviation for spatial affinity based Gaussian weights. (default: {3})
+        bc {float} -- parameter for controlling the influence of Mertens's contrast measure. (default: {1})
+        bs {float} -- parameter for controlling the influence of Mertens's saturation measure. (default: {1})
+        be {float} -- parameter for controlling the influence of Mertens's well exposedness measure. (default: {1})
+        eps {float} -- small constant to avoid computation instability (default: {1e-3})
+
+    Returns:
+        np.ndarray -- image exposure enhanced. same shape as `im`.
+    """
+    # create spacial affinity kernel
+    kernel = create_spacial_affinity_kernel(sigma)
+
+    # correct underexposudness
+    im_normalized = im.astype(float) / 255.
+    under_corrected = correct_underexposure(im_normalized, gamma, lambda_, kernel, eps)
+    inv_im_normalized = 1 - im_normalized
+    over_corrected = 1 - correct_underexposure(inv_im_normalized, gamma, lambda_, kernel, eps)
+
+    under_corrected = np.clip(under_corrected * 255, 0, 255).astype("uint8")
+    over_corrected = np.clip(over_corrected * 255, 0, 255).astype("uint8")
+    # convert to 8 bits and returns
+    return (under_corrected,over_corrected)
