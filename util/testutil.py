@@ -5,6 +5,10 @@ import json
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import cv2
+from rembg.bg import remove
+from PIL import Image
+import io
 
 from config.logging import LOGGING_CONF
 import logging
@@ -65,7 +69,7 @@ class TestUtil(object):
 
         return (accuracy, cmatrix, wrong_results)
 
-    def plot_images(self, imgs, row_title=None, **imshow_kwargs):
+    def plot_images(imgs, row_title=None, **imshow_kwargs):
         if not isinstance(imgs[0], list):
             # Make a 2d grid even if there's just 1 row
             imgs = [imgs]
@@ -82,3 +86,58 @@ class TestUtil(object):
         if row_title is not None:
             for row_idx in range(num_rows):
                 axs[row_idx, 0].set(ylabel=row_title[row_idx])
+
+    def test_color_correction(self,image_name):
+        sid = image_name.split('/')[-2]
+
+        model_name = "vgg16"
+        util = VearchUtil(model_name=self.model_name)
+        item = util.search_by_image(image=image_name)
+        # pprint(item)
+
+
+
+        image = cv2.imread(image_name)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+        image2 = cv2.imread(item["data"]["image_name"])
+        image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2RGB)
+
+        if item["data"]["sid"] == sid:
+            pprint(f" corect result")
+            return (True, [image,image2])
+
+        image3 = cv2.cvtColor(image,cv2.COLOR_RGB2LAB)
+        image3 = image3.astype("float32")
+        min = np.min(image3[:,:,0])
+        max = np.max(image3[:,:,0])
+        mean = np.mean(image3[:,:,0])
+        
+        image3[:,:,0] *= (180/mean)
+        image3[image3[:,:,0] > 255,0 ] = 255 
+
+        image3 = image3.astype("uint8")
+        image3 = cv2.cvtColor(image3,cv2.COLOR_Lab2BGR)
+        item2 = util.search_by_image(image=image3)
+        image3 = cv2.cvtColor(image3,cv2.COLOR_BGR2RGB)
+        # pprint(item2)
+
+        correct = True if item2["data"]["sid"] == sid else False
+
+        image_f = cv2.imread(item2["data"]["image_name"])
+        image_f = cv2.cvtColor(image_f, cv2.COLOR_BGR2RGB)
+
+        return (correct,[image,image3,image_f])
+
+
+    def remove_bg(self,image_name):
+        f = np.fromfile(image_name)
+        result = remove(f)
+        pil_image = Image.open(io.BytesIO(result)).convert("RGBA")
+        # pil_image.save("bg_removed.png")
+
+        # pil_image = PIL.Image.open('image.jpg')
+        opencvImage = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGBA2BGR)
+        return opencvImage
+
+    

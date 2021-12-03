@@ -15,3 +15,5 @@ torchsummary
 transformers
 iprogress
 ipywidgets
+scipy
+rembg

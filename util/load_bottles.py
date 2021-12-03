@@ -8,6 +8,10 @@ import uuid
 from util import vearchutil
 import math
 import argparse
+import numpy as np
+from rembg.bg import remove
+from PIL import Image
+import io
 
 from config.logging import LOGGING_CONF
 import logging
@@ -68,6 +72,24 @@ def load_data_to_vearch(data_path="./data/zerobox",model_name="vgg16"):
         res = util.add_image_index(fname,sid=item["id"], keyword=item["keyword"],tags=item["class"])
         logger.debug(res)
         # break
+
+def create_nobg_dataset(src_path= "./data/zerobox", data_path="./data/zerobox_nobg"):
+    logger.info(f"create_nobg_dataset({src_path}, {data_path})")
+
+    meta = json.load(open(f"{src_path}/meta_train.json","r"))
+    meta.extend(json.load(open(f"{src_path}/meta_test.json","r")))
+    for item in meta:
+        fname = f"{src_path}/images/{item['class']}/{item['file_name']}"
+        logger.debug(f"proncessing {fname}")
+        f = np.fromfile(fname)
+        result = remove(f)
+        pil_image = Image.open(io.BytesIO(result)).convert("RGBA")
+
+        if not os.path.exists(f"{data_path}/images/{item['class']}"):
+            os.mkdir(f"{data_path}/images/{item['class']}")
+
+        dest_name = f"{data_path}/images/{item['class']}/{item['file_name']}"
+        pil_image.save(dest_name)
 
 def main():
     # Training settings
