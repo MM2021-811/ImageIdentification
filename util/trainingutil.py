@@ -38,11 +38,11 @@ class AlphaBgTransform:
         x = AlphaBgTransform.to_square(x)
 
         # resize
-        x = cv2.resize(x, (224,224), interpolation = cv2.INTER_AREA)
+        # x = cv2.resize(x, (224,224), interpolation = cv2.INTER_AREA)
+        x = AlphaBgTransform.resize(x,224)
 
         #enhance color
-        x1 = AlphaBgTransform.enhance_color(x[:,:,:-1])
-        x[:,:,:-1] = x1
+        x = AlphaBgTransform.enhance_color(x)
 
         # basic transform for the model
         transform = transforms.Compose([
@@ -55,6 +55,11 @@ class AlphaBgTransform:
 
         #transform changed dimention to 2,0,1 which is 4 * 244 * 244
 
+        return x
+
+    @staticmethod
+    def resize(x, dim):
+        x = cv2.resize(x, (dim,dim), interpolation = cv2.INTER_AREA)
         return x
 
     @staticmethod
@@ -108,18 +113,25 @@ class AlphaBgTransform:
         idx = np.transpose(np.nonzero(arr))
         h = x.shape[0]
         w = x.shape[1]
-        lt = min(idx[0])
-        bt = max(idx[-1])
+        
+        lh = min(idx[:,0]) - 10
+        lw = min(idx[:,1]) - 10
+        bh = max(idx[:,0]) + 10
+        bw = max(idx[:,1]) + 10
+        
+        lh = 0 if lh < 0 else lh
+        lw = 0 if lw < 0 else lw
+        bh = h if bh > h else bh
+        bw = w if bw > w else bw
 
-        lt = lt - 10 if lt-10 > 0 else 0
-        bt = bt + 10 if bt+ 10 < max(h,w) else max(h,w)
-
-        croped_image = x[lt:bt,lt:bt,:]
+        croped_image = x[lh:bh,lw:bw,:]
 
         return croped_image
 
     @staticmethod
     def enhance_color(x):
+        x1 = x[:,:,:-1]
+
         gamma = 0.6
         lambda_ = 0.15
         sigma=3
@@ -129,9 +141,12 @@ class AlphaBgTransform:
         eps = 1e-3
 
         # correct color
-        enhanced_image = enhance_image_exposure(x, gamma, lambda_, dual=True,
+        enhanced_image = enhance_image_exposure(x1, gamma, lambda_, dual=True,
                                         sigma=sigma, bc=bc, bs=bs, be=be, eps=eps)
-        return enhanced_image
+
+        x[:,:,:-1] = enhanced_image
+
+        return x
 
     @staticmethod
     def to_square(x):

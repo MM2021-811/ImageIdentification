@@ -66,7 +66,7 @@ def test_transform(image_name):
     return img
 
 
-test_transform(image_name="./data/zerobox_nobg/images/blackbottles/000037.png")
+test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
 
 # load_net("vgg16",data_path="./data/zerobox_light")
 # eval_net("vgg16",data_path="./data/zerobox_light")
