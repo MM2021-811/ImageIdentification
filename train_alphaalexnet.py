@@ -10,7 +10,9 @@ from typing import Optional, List, Callable
 from torchvision.models.googlenet import BasicConv2d
 import time
 import torchvision.models as models
-from util.trainingutil import AlphaAlexNet, ParameterError, AlphaBgResize
+from util.trainingutil import AlphaAlexNet, ParameterError, AlphaBgTransform
+import os
+
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -61,7 +63,7 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
+ 
 
 def main():
     # Training settings
@@ -84,7 +86,7 @@ def main():
                         help='random seed (default: 1)')
     parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                         help='how many batches to wait before logging training status')
-    parser.add_argument('--save-model', action='store_true', default=False,
+    parser.add_argument('--save-model', action='store_true', default=True,
                         help='For Saving the current Model')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -98,6 +100,7 @@ def main():
     if use_cuda:
         cuda_kwargs = {'num_workers': 1,
                        'pin_memory': True,
+                       "multiprocessing_context":'spawn',
                        'shuffle': True}
         train_kwargs.update(cuda_kwargs)
         test_kwargs.update(cuda_kwargs)
@@ -111,13 +114,14 @@ def main():
     # i.e. mini-batches of 3-channel RGB images of shape (3 x H x W), where H and W are expected to be at least 224.
     # The images have to be loaded in to a range of [0, 1]
     # and then normalized using mean = [0.485, 0.456, 0.406] and std = [0.229, 0.224, 0.225].
-    transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        # transforms.Normalize(mean=[0.485], std=[0.229]),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    # transform = transforms.Compose([
+    #     transforms.Resize(256),
+    #     transforms.CenterCrop(224),
+    #     transforms.ToTensor(),
+    #     # transforms.Normalize(mean=[0.485], std=[0.229]),
+    #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    # ])
+    transform = transform = transforms.Compose([AlphaBgTransform()])
     dataset1 = datasets.CIFAR100('../data', train=True, download=True,
                               transform=transform)
     dataset2 = datasets.CIFAR100('../data', train=False,
@@ -130,22 +134,28 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     # model = Net(init_weights=True).to(device)
-    model = models.vgg16(pretrained=False,num_classes=100).to(device)
+    # model = models.vgg16(pretrained=False,num_classes=100).to(device)
     # model = models.alexnet(pretrained=False,num_classes=100).to(device)
+    model = AlphaAlexNet(num_classes=100).to(device)
     model.train()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     start = time.time()
+    # load model from internal training
+    checkpoint_model = f'./models/CIFAR100_AlphaAlexNet_tmp.pt' 
+    if os.path.exists(checkpoint_model):
+        model.load_state_dict(torch.load(checkpoint_model))
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader)
         scheduler.step()
+        torch.save(model.state_dict(), checkpoint_model)
     end = time.time()
     print(f"Elapsed Time: {end - start}")
 
     if args.save_model:
-        torch.save(model.state_dict(), "CIFAR100_googlenet.pt")
+        torch.save(model.state_dict(), "CIFAR100_AlphaAlexNet.pt")
 
 
 if __name__ == '__main__':

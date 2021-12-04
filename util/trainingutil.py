@@ -24,12 +24,16 @@ class AlphaBgTransform:
     """
 
     def __init__(self):
-        pass
+        self.u2net = rembg.get_model("u2net")
 
     def __call__(self, x):
+        if type(x) is Image.Image:
+            # conver to opencv image, by default it is RGB or RGBA
+            x = np.array(x)
+        
         if x.shape[2] == 3:
             # only 3 channel remove bg and add alpha channel
-            x = AlphaBgTransform.remove_bg(x)
+            x = self.remove_bg(x)
 
         #crop
         x= AlphaBgTransform.center_crop(x)
@@ -44,8 +48,7 @@ class AlphaBgTransform:
         # #enhance color
         # x = AlphaBgTransform.enhance_color(x)
 
-        (cu,co) = get_under_n_over_channel(im=x)
-        
+        # (cu,co) = get_under_n_over_channel(im=x[:,:,:-1])
 
         # basic transform for the model
         transform = transforms.Compose([
@@ -65,10 +68,8 @@ class AlphaBgTransform:
         x = cv2.resize(x, (dim,dim), interpolation = cv2.INTER_AREA)
         return x
 
-    @staticmethod
-    def remove_bg(
+    def remove_bg(self,
         data,
-        model_name="u2net",
         alpha_matting=False,
         alpha_matting_foreground_threshold=240,
         alpha_matting_background_threshold=10,
@@ -88,10 +89,10 @@ class AlphaBgTransform:
         Returns:
             [type]: [description]
         """
-        model = rembg.get_model(model_name)
         # img = Image.open(io.BytesIO(data)).convert("RGB")
-        img = data # input must be RGB Ndarray
-        mask = rembg.detect.predict(model, np.array(img)).convert("L")
+        img = Image.fromarray(data) # input must RGB NDarray
+        mask = rembg.detect.predict(self.u2net, np.array(img)).convert("L")
+        # mask = rembg.detect.predict(self.u2net, img).convert("L")
 
         if alpha_matting:
             try:
@@ -108,7 +109,7 @@ class AlphaBgTransform:
         else:
             cutout = rembg.naive_cutout(img, mask)
 
-        return cutout
+        return np.array(cutout)
     
     @staticmethod
     def center_crop(x):
@@ -174,7 +175,7 @@ class AlphaBgTransform:
 class ParameterError(Exception):
     pass
 
-class AlphaAlexNet(AlexNet):
+class AlphaAlexNet(nn.Module):
     """Adding Alpha BG info as a descriptor of shapes
 
     Args:
@@ -182,7 +183,7 @@ class AlphaAlexNet(AlexNet):
                 droput: default 0.5
     """
     def __init__(self, num_classes: int = 1000,dropout: float = 0.5) -> None:        
-        super().__init__(num_classes=num_classes,dropout=dropout)
+        super(AlphaAlexNet,self).__init__()
     
         self.features = nn.Sequential(
             nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2), # channel 3->4
@@ -212,7 +213,7 @@ class AlphaAlexNet(AlexNet):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[0] <=3:
+        if x.shape[1] <=3:
             raise ParameterError("AlphaAlexNet expecting input is 4*224*224 ARGB tensor")
         x = self.features(x)
         x = self.avgpool(x)
