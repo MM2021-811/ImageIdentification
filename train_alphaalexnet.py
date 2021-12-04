@@ -146,7 +146,7 @@ def main():
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     start = time.time()
     # load model from internal training
-    checkpoint_model = f'./models/CIFAR100_AlphaAlexNet_tmp.pt' 
+    checkpoint_model = f'./models/CIFAR100_AlphaAlexNet_tmp.pt'
     if os.path.exists(checkpoint_model):
         model.load_state_dict(torch.load(checkpoint_model))
     for epoch in range(1, args.epochs + 1):
