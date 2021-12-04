@@ -142,6 +142,7 @@ def main():
 
     pprint(torchsummary.summary(model,input_size=(3,224,224),batch_size=64))
     
+    
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
