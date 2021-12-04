@@ -173,8 +173,7 @@ def correct_underexposure(im: np.ndarray, gamma: float, lambda_: float, kernel: 
 
 # TODO: resize image if too large, optimization take too much time
 
-
-def enhance_image_exposure(im: np.ndarray, gamma: float, lambda_: float, dual: bool = True, sigma: int = 3,
+def enhance_image_exposure(im: np.ndarray, gamma: float=0.6, lambda_: float=0.15, dual: bool = True, sigma: int = 3,
                            bc: float = 1, bs: float = 1, be: float = 1, eps: float = 1e-3):
     """Enhance input image, using either DUAL method, or LIME method. For more info, please see original papers.
 
@@ -214,7 +213,7 @@ def enhance_image_exposure(im: np.ndarray, gamma: float, lambda_: float, dual: b
     return np.clip(im_corrected * 255, 0, 255).astype("uint8")
 
 
-def get_under_n_over_channel(im: np.ndarray, gamma: float, lambda_: float, dual: bool = True, sigma: int = 3,
+def get_under_n_over_channel(im: np.ndarray, gamma: float=0.6, lambda_: float=0.15, dual: bool = True, sigma: int = 3,
                            bc: float = 1, bs: float = 1, be: float = 1, eps: float = 1e-3):
     """Enhance input image, using either DUAL method, or LIME method. For more info, please see original papers.
 

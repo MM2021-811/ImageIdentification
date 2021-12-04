@@ -16,7 +16,7 @@ import torch.nn as nn
 from torchvision.models.alexnet import AlexNet
 from torchvision import datasets, transforms, models
 import rembg.bg as rembg
-from util.exposure_enhancement import enhance_image_exposure
+from util.exposure_enhancement import enhance_image_exposure, get_under_n_over_channel
 
 class AlphaBgTransform:
     """Adjsut image size based on alpha mask
@@ -41,8 +41,11 @@ class AlphaBgTransform:
         # x = cv2.resize(x, (224,224), interpolation = cv2.INTER_AREA)
         x = AlphaBgTransform.resize(x,224)
 
-        #enhance color
-        x = AlphaBgTransform.enhance_color(x)
+        # #enhance color
+        # x = AlphaBgTransform.enhance_color(x)
+
+        (cu,co) = get_under_n_over_channel(im=x)
+        
 
         # basic transform for the model
         transform = transforms.Compose([
