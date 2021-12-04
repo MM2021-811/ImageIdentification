@@ -140,8 +140,8 @@ def main():
     # model = AlphaAlexNet(num_classes=100).to(device)
     model.train()
 
-    pprint(torchsummary.summary(model,input_size=(3,224,224),batch_size=64))
-    
+    torchsummary.summary(model,input_size=(3,224,224),batch_size=64)
+
     
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 

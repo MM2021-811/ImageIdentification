@@ -12,6 +12,7 @@ import time
 import torchvision.models as models
 from util.trainingutil import AlphaAlexNet, ParameterError, AlphaBgTransform
 import os
+import torchsummary
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -138,6 +139,8 @@ def main():
     # model = models.alexnet(pretrained=False,num_classes=100).to(device)
     model = AlphaAlexNet(num_classes=100).to(device)
     model.train()
+    torchsummary.summary(model,input_size=(3,224,224),batch_size=64)
+
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
