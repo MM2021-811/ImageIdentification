@@ -6,7 +6,7 @@ from util.load_bottles import load_data_to_vearch
 from init_vearch_local import create_space,delete_space, create_db
 from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet, SiameseLoader
 import cv2
-
+from util.load_bottles import create_dataset_metadata
 
 # create_food101_subset()
 # load_data_to_vearch()
@@ -95,8 +95,11 @@ def test_siamese():
        pprint(labels.shape)
        break
 
+def test_createmeta():
+    create_dataset_metadata(data_path="./data/zerobox_nobg/",num_images=10000,test_percent=0.2)
 
-test_siamese()
+test_createmeta()
+# test_siamese()
 # test_model()
 # test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
 # load_net("vgg16",data_path="./data/zerobox_light")

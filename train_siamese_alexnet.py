@@ -56,34 +56,28 @@ def test(model, device, test_loader):
     test_loss = 0
     correct = 0
     with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
+        for batch_idx, (data1, data2, labels) in enumerate(test_loader):
+            data1, data2, labels = (
+                torch.tensor(data1).to(device),
+                torch.tensor(data2).to(device),
+                torch.tensor(labels).to(device),
+            )
 
-            # n_output = target.shape[0]
-            # output = torch.zeros((n_output,model.num_classes)).to(device)
-            # for i in range(n_output):
-            #     o1 = model(data)
-            #     output[i] = o1
-
-            output = model(data)
+            output = model(data1,data2)
             # sum up batch loss
-            # test_loss += F.nll_loss(output, target, reduction='sum').item()
-            # test_loss += F.mse_loss(output,target,reduce="sum").item()
-            test_loss += F.cross_entropy(output, target, reduce="sum").item()
+            test_loss +=  F.l1_loss(output,labels).item()
             # get the index of the max log-probability
-            # todo: debug error
 
-            pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
+            correct += output.eq(labels).sum().item()
 
-    test_loss /= len(test_loader.dataset)
+    test_loss /= len(test_loader)
 
     print(
         "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
             test_loss,
             correct,
-            len(test_loader.dataset),
-            100.0 * correct / len(test_loader.dataset),
+            len(test_loader),
+            100.0 * correct / len(test_loader),
         )
     )
 
@@ -172,7 +166,6 @@ def main():
     model = AlphaWeightedAlexNet(device=device).to(device)
     model.train()
     
-
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
@@ -191,7 +184,7 @@ def main():
     print(f"Elapsed Time: {end - start}")
 
     if args.save_model:
-        torch.save(model.state_dict(), "bottle_siamese.pt")
+        torch.save(model.state_dict(), "./models/bottle_siamese.pt")
 
 
 if __name__ == "__main__":

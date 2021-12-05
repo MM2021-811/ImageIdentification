@@ -293,9 +293,9 @@ class SiameseLoader(object):
             meta_file = f"{self.data_path}/meta_test.json"
 
         self.data = json.load(open(meta_file,"r"))
-
         self._init_maping(shuffle)
         self._load_data_to_memory()
+        
         
 
     def __iter__(self):
@@ -351,6 +351,8 @@ class SiameseLoader(object):
 
     def _load_data_to_memory(self):
         cache_file = f"{self.data_path}/siamese_data_{self.train}.pkl"
+        print(f"Training {self.train} cache file: {cache_file}")
+        
         if self.use_cache is True:
             if os.path.exists(cache_file):
                 try:

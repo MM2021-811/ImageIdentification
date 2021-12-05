@@ -53,12 +53,16 @@ def create_dataset_metadata(data_path="./data/zerobox",num_images = 100, test_pe
 
         #split to index and test
         test_idx = -1 * math.ceil(cnt * test_percent)
-        meta_train.extend(meta[:-1 * test_idx])
+        meta_train.extend(meta[:test_idx])
         meta_test.extend(meta[test_idx:])
-   
+    
+    meta_all = []
+    meta_all.extend(meta_train)
+    meta_all.extend(meta_test)
     json.dump(meta_train,open(f"{data_path}/meta_train.json","w"),indent=4)
     json.dump(meta_test,open(f"{data_path}/meta_test.json","w"),indent=4)
-
+    json.dump(meta_all,open(f"{data_path}/meta_all.json","w"),indent=4)
+    
     return
 
 def load_data_to_vearch(data_path="./data/zerobox",model_name="vgg16"):
