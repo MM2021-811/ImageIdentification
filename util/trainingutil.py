@@ -13,6 +13,8 @@ import torchvision.transforms.functional as TF
 import random
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+
 from torchvision.models.alexnet import AlexNet
 from torchvision import datasets, transforms, models
 import rembg.bg as rembg
@@ -23,8 +25,9 @@ class AlphaBgTransform:
     Output 224*224*4 ndarray
     """
 
-    def __init__(self):
+    def __init__(self, alpha=True):
         self.u2net = rembg.get_model("u2net")
+        self.alpha = alpha
 
     def __call__(self, x):
         if type(x) is Image.Image:
@@ -36,7 +39,7 @@ class AlphaBgTransform:
             x = self.remove_bg(x)
 
         #crop
-        x= AlphaBgTransform.center_crop(x)
+        x = AlphaBgTransform.center_crop(x)
 
         # tosquare
         x = AlphaBgTransform.to_square(x)
@@ -60,6 +63,9 @@ class AlphaBgTransform:
         x = transform(x)
 
         #transform changed dimention to 2,0,1 which is 4 * 244 * 244
+        if self.alpha is False:
+            # return 3 channel ndarray
+            x = x[:-1,:,:]
 
         return x
 
@@ -220,3 +226,49 @@ class AlphaAlexNet(nn.Module):
         x = torch.flatten(x, 1)
         x = self.classifier(x)
         return x
+
+
+class AlphaWeightedAlexNet(nn.Module):
+    def __init__(self,dropout: float = 0.5) -> None:        
+        super().__init__()
+        self.alexnet = models.alexnet(pretrained=True)
+        self.alexnet.eval()
+    
+        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.feat_layer = nn.Sequential(
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 2048),
+            nn.ReLU(inplace=True),
+            nn.Linear(2048, 1024),
+        )
+
+        self.discritor = nn.Sequential(
+            nn.Linear(2 * 1024, 1024),
+            nn.Linear(1024, 512),
+            nn.Linear(512, 2),
+            nn.Softmax(1)
+        )
+
+    def _features(self,x):
+        with torch.no_grad():
+            x = self.alexnet.features(x)
+        return x
+
+    def features(self,x):
+        x = self._features(x)
+        x = self.avgpool(x)
+        x = x.view(x.size()[0],-1)
+        x = self.feat_layer(x)
+        return x
+
+    def forward(self, input1, input2):
+        output1 = self.features(input1)
+        output1 = output1.view(output1.size()[0], -1)#make it suitable for fc layer.
+        output2 = self.features(input2)
+        output2 = output2.view(output2.size()[0], -1)
+        
+        output = torch.cat((output1, output2),1)
+        output = self.discritor(output)
+        return output

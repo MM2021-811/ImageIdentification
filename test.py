@@ -4,8 +4,9 @@ from util.testutil import TestUtil
 from pprint import pprint
 from util.load_bottles import load_data_to_vearch
 from init_vearch_local import create_space,delete_space, create_db
-from util.trainingutil import AlphaBgTransform
+from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet
 import cv2
+
 
 # create_food101_subset()
 # load_data_to_vearch()
@@ -65,8 +66,28 @@ def test_transform(image_name):
     pprint(img.shape)
     return img
 
+def test_model():
+    wrong_images = ['./data/zerobox_nobg/images/blackbottles/000037.png',
+    './data/zerobox_nobg/images/white02/output0064.png',
+    './data/zerobox_nobg/images/white02/output0065.png',
+    './data/zerobox_nobg/images/white03/output0065.png',
+    './data/zerobox_nobg/images/yellow03/bumbler0021.png',
+    './data/zerobox_nobg/images/yellow03/bumbler0022.png']
+    model = AlphaWeightedAlexNet()
+    transform = AlphaBgTransform()
 
-test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
+    image1 = cv2.imread(wrong_images[1],cv2.IMREAD_UNCHANGED)
+    image2 = cv2.imread(wrong_images[2],cv2.IMREAD_UNCHANGED)
+    
+    x = transform(image1).unsqueeze(0)
+    y = transform(image2).unsqueeze(0)
 
+    z = model(x,y)
+
+    pprint(z)
+
+test_model()
+
+# test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
 # load_net("vgg16",data_path="./data/zerobox_light")
 # eval_net("vgg16",data_path="./data/zerobox_light")
