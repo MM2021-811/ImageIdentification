@@ -303,7 +303,7 @@ class SiameseLoader(object):
         i = 0
         data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
         data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
-        labels = np.zeros((self.batch_size))
+        labels = np.zeros((self.batch_size,2))
         while i < len(self.data_idx):
             j = i % self.batch_size
 
@@ -311,15 +311,16 @@ class SiameseLoader(object):
             (img1,img2,label) = self.get_batch_data(arr[0],arr[1])
             data1[j,:,:,:] = img1
             data2[j,:,:,:] = img2
-            labels[j] = label
+            labels[j,:] = label
             i += 1
             if i % self.batch_size == 0:
                 yield (data1,data2,labels)
                 data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
                 data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
-                labels = np.zeros((self.batch_size))
+                labels = np.zeros((self.batch_size,2))
                 batchid += 1
-            elif i >= self.batch_size:
+            elif i >= len(self.data_idx):
+                # last not whole batch
                 yield (data1,data2,labels)
 
 
@@ -329,9 +330,9 @@ class SiameseLoader(object):
         l1 = self.labels[i]
         l2 = self.labels[j]
         if l1 == l2:
-            label = 1
+            label = [1,0]
         else:
-            label = 1
+            label = [0,1]
         return (img1.numpy(), img2.numpy(), label)
 
     def __len__(self):

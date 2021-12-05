@@ -43,7 +43,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                     epoch,
                     batch_idx * len(data1),
                     len(train_loader),
-                    100.0 * batch_idx / len(train_loader),
+                    100.0 * batch_idx * len(data1) / len(train_loader),
                     loss.item(),
                 )
             )
@@ -52,7 +52,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
 
 def test(model, device, test_loader):
-    # model.eval()
+    model.eval()
     test_loss = 0
     correct = 0
     with torch.no_grad():
