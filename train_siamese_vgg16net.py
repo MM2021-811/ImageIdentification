@@ -13,6 +13,7 @@ import torchvision.models as models
 from util.trainingutil import (
     AlphaAlexNet,
     AlphaWeightedAlexNet,
+    AlphaWeightedVgg16Net,
     ParameterError,
     AlphaBgTransform,
     SiameseLoader,
@@ -25,21 +26,21 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data1, data2, labels) in enumerate(train_loader):
         data1, data2, labels = (
-            torch.tensor(data1,dtype=torch.float32).to(device),
-            torch.tensor(data2,dtype=torch.float32).to(device),
-            torch.tensor(labels,dtype=torch.float32).to(device),
+            torch.tensor(data1).to(device),
+            torch.tensor(data2).to(device),
+            torch.tensor(labels).to(device),
         )
         optimizer.zero_grad()
         output = model(data1,data2)
-        # loss = F.nll_loss(output, labels) # not supported
-        # loss = F.mse_loss(output,labels)
-        # loss = F.cross_entropy(output, labels)
-        loss = F.l1_loss(output,labels)
+        # loss = F.nll_loss(output, target)
+        # loss = F.mse_loss(output,target)
+        loss = F.cross_entropy(output, labels)
+        # loss = F.l1_loss(output,labels)
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
             print(
-                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.12f}".format(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
                     epoch,
                     batch_idx * len(data1),
                     len(train_loader),
@@ -73,7 +74,7 @@ def test(model, device, test_loader):
     test_loss /= len(test_loader)
 
     print(
-        "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.12f}%)\n".format(
+        "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n".format(
             test_loss,
             correct,
             len(test_loader),
@@ -102,9 +103,9 @@ def main():
     parser.add_argument(
         "--epochs",
         type=int,
-        default=20,
+        default=14,
         metavar="N",
-        help="number of epochs to train (default: 20)",
+        help="number of epochs to train (default: 14)",
     )
     parser.add_argument(
         "--lr",
@@ -163,7 +164,7 @@ def main():
     train_loader = SiameseLoader()
     test_loader = SiameseLoader(train=False)
 
-    model = AlphaWeightedAlexNet(device=device).to(device)
+    model = AlphaWeightedVgg16Net(device=device).to(device)
     model.train()
     
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
@@ -171,7 +172,7 @@ def main():
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     start = time.time()
     # load model from internal training
-    checkpoint_model = "./models/bottle_siamese_tmp.pt"
+    checkpoint_model = "./models/bottle_siamese_vgg16_tmp.pt"
 
     if os.path.exists(checkpoint_model):
         model.load_state_dict(torch.load(checkpoint_model))
@@ -184,7 +185,7 @@ def main():
     print(f"Elapsed Time: {end - start}")
 
     if args.save_model:
-        torch.save(model.state_dict(), "./models/bottle_siamese.pt")
+        torch.save(model.state_dict(), "./models/bottle_siamese_vgg16.pt")
 
 
 if __name__ == "__main__":

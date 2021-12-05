@@ -53,7 +53,7 @@ class AlphaBgTransform:
         x = AlphaBgTransform.resize(x,224)
 
         # #enhance color
-        # x = AlphaBgTransform.enhance_color(x)
+        x = AlphaBgTransform.enhance_color(x)
 
         # (cu,co) = get_under_n_over_channel(im=x[:,:,:-1])
 
@@ -233,6 +233,55 @@ class AlphaAlexNet(nn.Module):
         return x
 
 
+class AlphaWeightedVgg16Net(nn.Module):
+    def __init__(self,device="cpu",dropout: float = 0.5) -> None:
+        super().__init__()
+        self.vgg16 = models.vgg16(pretrained=True)
+        self.vgg16.to(device)
+        self.vgg16.eval()
+
+        self.pool = nn.MaxPool2d(kernel_size=(7, 7))
+        self.feat_layer = nn.Sequential(
+            nn.Linear(512, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 2048),
+            nn.ReLU(inplace=True),
+             nn.Dropout(p=dropout),
+            nn.Linear(2048, 1024),
+            nn.ReLU(inplace=True),
+            nn.Linear(1024, 512),
+        )
+        
+        self.discritor = nn.Sequential(
+            nn.Linear(2 * 512, 512),
+            nn.Linear(512, 2),
+            nn.Softmax(1)
+        )
+
+    def _features(self,x):
+        with torch.no_grad():
+            x = self.vgg16.features(x)
+        return x
+
+    def features(self,x):
+        x = self._features(x)
+        x = self.pool(x)
+        x = x.view(x.size()[0],-1)
+        x = self.feat_layer(x)
+        return x
+
+    def forward(self, input1, input2):
+        output1 = self.features(input1)
+        output1 = output1.view(output1.size()[0], -1)#make it suitable for fc layer.
+        output2 = self.features(input2)
+        output2 = output2.view(output2.size()[0], -1)
+
+        output = torch.cat((output1, output2),1)
+        output = self.discritor(output)
+        return output
+
+
 class AlphaWeightedAlexNet(nn.Module):
     def __init__(self,device="cpu",dropout: float = 0.5) -> None:
         super().__init__()
@@ -248,11 +297,12 @@ class AlphaWeightedAlexNet(nn.Module):
             nn.Linear(4096, 2048),
             nn.ReLU(inplace=True),
             nn.Linear(2048, 1024),
+            nn.Linear(1024, 512),
         )
 
         self.discritor = nn.Sequential(
-            nn.Linear(2 * 1024, 1024),
-            nn.Linear(1024, 512),
+            nn.Linear(2 * 512, 2048),
+            nn.Linear(2048, 512),
             nn.Linear(512, 2),
             nn.Softmax(1)
         )
