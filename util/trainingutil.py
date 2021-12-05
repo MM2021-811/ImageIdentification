@@ -2,6 +2,7 @@
 # AlphaAlexNet code is based on torchvision AlexNet
 #
 import numpy as np
+from torch._C import device
 from util.vearchutil import VearchUtil
 from util.testutil import TestUtil
 import cv2
@@ -233,9 +234,10 @@ class AlphaAlexNet(nn.Module):
 
 
 class AlphaWeightedAlexNet(nn.Module):
-    def __init__(self,dropout: float = 0.5) -> None:
+    def __init__(self,device="cpu",dropout: float = 0.5) -> None:
         super().__init__()
         self.alexnet = models.alexnet(pretrained=True)
+        self.alexnet.to(device)
         self.alexnet.eval()
 
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
@@ -299,8 +301,8 @@ class SiameseLoader(object):
     def __iter__(self):
         batchid = 0
         i = 0
-        data1 = np.zeros((self.batch_size,3,224,224),dtype="float64")
-        data2 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+        data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
+        data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
         labels = np.zeros((self.batch_size))
         while i < len(self.data_idx):
             j = i % self.batch_size
@@ -312,13 +314,13 @@ class SiameseLoader(object):
             labels[j] = label
             i += 1
             if i % self.batch_size == 0:
-                yield (batchid,data1,data2,labels)
-                data1 = np.zeros((self.batch_size,3,224,224),dtype="float64")
-                data2 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+                yield (data1,data2,labels)
+                data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
+                data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
                 labels = np.zeros((self.batch_size))
                 batchid += 1
             elif i >= self.batch_size:
-                yield (batchid,data1,data2,labels)
+                yield (data1,data2,labels)
 
 
     def get_batch_data(self,i, j):
@@ -347,7 +349,7 @@ class SiameseLoader(object):
             np.random.shuffle(self.data_idx)
 
     def _load_data_to_memory(self):
-        cache_file = f"{self.data_path}/siamese_data.pkl"
+        cache_file = f"{self.data_path}/siamese_data_{self.train}.pkl"
         if self.use_cache is True:
             if os.path.exists(cache_file):
                 try:
