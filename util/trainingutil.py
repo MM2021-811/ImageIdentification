@@ -20,6 +20,8 @@ from torchvision import datasets, transforms, models
 import rembg.bg as rembg
 from util.exposure_enhancement import enhance_image_exposure, get_under_n_over_channel
 import json
+import pickle
+import os
 
 class AlphaBgTransform:
     """Adjsut image size based on alpha mask
@@ -34,7 +36,7 @@ class AlphaBgTransform:
         if type(x) is Image.Image:
             # conver to opencv image, by default it is RGB or RGBA
             x = np.array(x)
-        
+
         if x.shape[2] == 3:
             # only 3 channel remove bg and add alpha channel
             x = self.remove_bg(x)
@@ -118,19 +120,19 @@ class AlphaBgTransform:
             cutout = rembg.naive_cutout(img, mask)
 
         return np.array(cutout)
-    
+
     @staticmethod
     def center_crop(x):
         arr = x[:,:,3]
         idx = np.transpose(np.nonzero(arr))
         h = x.shape[0]
         w = x.shape[1]
-        
+
         lh = min(idx[:,0]) - 10
         lw = min(idx[:,1]) - 10
         bh = max(idx[:,0]) + 10
         bw = max(idx[:,1]) + 10
-        
+
         lh = 0 if lh < 0 else lh
         lw = 0 if lw < 0 else lw
         bh = h if bh > h else bh
@@ -190,9 +192,9 @@ class AlphaAlexNet(nn.Module):
         AlexNet (num_classes): default 1000
                 droput: default 0.5
     """
-    def __init__(self, num_classes: int = 1000,dropout: float = 0.5) -> None:        
+    def __init__(self, num_classes: int = 1000,dropout: float = 0.5) -> None:
         super(AlphaAlexNet,self).__init__()
-    
+
         self.features = nn.Sequential(
             nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2), # channel 3->4
             nn.ReLU(inplace=True),
@@ -231,11 +233,11 @@ class AlphaAlexNet(nn.Module):
 
 
 class AlphaWeightedAlexNet(nn.Module):
-    def __init__(self,dropout: float = 0.5) -> None:        
+    def __init__(self,dropout: float = 0.5) -> None:
         super().__init__()
         self.alexnet = models.alexnet(pretrained=True)
         self.alexnet.eval()
-    
+
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.feat_layer = nn.Sequential(
             nn.Linear(256 * 6 * 6, 4096),
@@ -270,33 +272,36 @@ class AlphaWeightedAlexNet(nn.Module):
         output1 = output1.view(output1.size()[0], -1)#make it suitable for fc layer.
         output2 = self.features(input2)
         output2 = output2.view(output2.size()[0], -1)
-        
+
         output = torch.cat((output1, output2),1)
         output = self.discritor(output)
         return output
 
 class SiameseLoader(object):
-    def __init__(self,data_path="./data/zerobox_nobg", train=True, batch_size=64,shuffle=True) -> None:
+    def __init__(self,data_path="./data/zerobox_nobg", train=True, batch_size=64,shuffle=True, use_cache=True) -> None:
         super().__init__()
         self.batch_size = batch_size
         self.data_path = data_path
         self.train = train
+        self.use_cache = use_cache
 
         if self.train is True:
             meta_file = f"{self.data_path}/meta_train.json"
         else:
             meta_file = f"{self.data_path}/meta_test.json"
-        
+
         self.data = json.load(open(meta_file,"r"))
 
         self._init_maping(shuffle)
+        self._load_data_to_memory()
+        
 
     def __iter__(self):
         batchid = 0
-        i = 0          
+        i = 0
         data1 = np.zeros((self.batch_size,3,224,224),dtype="float64")
         data2 = np.zeros((self.batch_size,3,224,224),dtype="float64")
-        labels = np.zeros((self.batch_size))  
+        labels = np.zeros((self.batch_size))
         while i < len(self.data_idx):
             j = i % self.batch_size
 
@@ -321,12 +326,12 @@ class SiameseLoader(object):
         img2 = self.images[j]
         l1 = self.labels[i]
         l2 = self.labels[j]
-        if l1 == l2: 
+        if l1 == l2:
             label = 1
         else:
             label = 1
-        return (img1.numpy(), img2.nupy(), label)
-    
+        return (img1.numpy(), img2.numpy(), label)
+
     def __len__(self):
        return len(self.data_idx)
 
@@ -337,11 +342,22 @@ class SiameseLoader(object):
         for i in range(3*n):
             for j in range(3*n):
                 self.data_idx.append((i,j))
-        
-        if shuffle is True:
-            self.data_idx = np.random.shuffle(self.data_idx)
 
-    def _load_data_to_memory(self):       
+        if shuffle is True:
+            np.random.shuffle(self.data_idx)
+
+    def _load_data_to_memory(self):
+        cache_file = f"{self.data_path}/siamese_data.pkl"
+        if self.use_cache is True:
+            if os.path.exists(cache_file):
+                try:
+                    data = pickle.load(open(cache_file,"rb"))
+                    self.images = data["images"]
+                    self.labels = data["labels"]
+                    return
+                except:
+                    pass
+
         al_transform = AlphaBgTransform(alpha=False)
         transform = transforms.Compose([
             # transforms.Resize(224),
@@ -368,10 +384,11 @@ class SiameseLoader(object):
             self.images.append(co)
             self.labels.append(label)
 
-    
-            
+        data = {"images":self.images, "labels": self.labels}
+        pickle.dump(data,open(cache_file,"wb"))
 
 
-            
+
+
 
 

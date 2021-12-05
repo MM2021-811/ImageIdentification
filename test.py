@@ -4,7 +4,7 @@ from util.testutil import TestUtil
 from pprint import pprint
 from util.load_bottles import load_data_to_vearch
 from init_vearch_local import create_space,delete_space, create_db
-from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet
+from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet, SiameseLoader
 import cv2
 
 
@@ -86,8 +86,18 @@ def test_model():
 
     pprint(z)
 
-test_model()
+def test_siamese():
+   loader = SiameseLoader(train=False)
+   for (batchid,data1,data2,labels) in loader:
+       pprint(batchid)
+       pprint(data1.shape)
+       pprint(data2.shape)
+       pprint(labels.shape)
+       break
 
+
+test_siamese()
+# test_model()
 # test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
 # load_net("vgg16",data_path="./data/zerobox_light")
 # eval_net("vgg16",data_path="./data/zerobox_light")
