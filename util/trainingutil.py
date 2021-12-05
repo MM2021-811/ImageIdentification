@@ -19,6 +19,7 @@ from torchvision.models.alexnet import AlexNet
 from torchvision import datasets, transforms, models
 import rembg.bg as rembg
 from util.exposure_enhancement import enhance_image_exposure, get_under_n_over_channel
+import json
 
 class AlphaBgTransform:
     """Adjsut image size based on alpha mask
@@ -54,18 +55,19 @@ class AlphaBgTransform:
         # (cu,co) = get_under_n_over_channel(im=x[:,:,:-1])
 
         # basic transform for the model
-        transform = transforms.Compose([
-            # transforms.Resize(224),
-            # transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406,0.9], std=[0.229, 0.224, 0.225,0.2]),
-        ])
-        x = transform(x)
+        # transform = transforms.Compose([
+        #     # transforms.Resize(224),
+        #     # transforms.CenterCrop(224),
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=[0.485, 0.456, 0.406,0.9], std=[0.229, 0.224, 0.225,0.2]),
+        # ])
+        # x = transform(x)
 
         #transform changed dimention to 2,0,1 which is 4 * 244 * 244
         if self.alpha is False:
             # return 3 channel ndarray
-            x = x[:-1,:,:]
+            # x = x[:-1,:,:]
+            x = x[:,:,:-1]
 
         return x
 
@@ -272,3 +274,104 @@ class AlphaWeightedAlexNet(nn.Module):
         output = torch.cat((output1, output2),1)
         output = self.discritor(output)
         return output
+
+class SiameseLoader(object):
+    def __init__(self,data_path="./data/zerobox_nobg", train=True, batch_size=64,shuffle=True) -> None:
+        super().__init__()
+        self.batch_size = batch_size
+        self.data_path = data_path
+        self.train = train
+
+        if self.train is True:
+            meta_file = f"{self.data_path}/meta_train.json"
+        else:
+            meta_file = f"{self.data_path}/meta_test.json"
+        
+        self.data = json.load(open(meta_file,"r"))
+
+        self._init_maping(shuffle)
+
+    def __iter__(self):
+        batchid = 0
+        i = 0          
+        data1 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+        data2 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+        labels = np.zeros((self.batch_size))  
+        while i < len(self.data_idx):
+            j = i % self.batch_size
+
+            arr = self.data_idx[i]
+            (img1,img2,label) = self.get_batch_data(arr[0],arr[1])
+            data1[j,:,:,:] = img1
+            data2[j,:,:,:] = img2
+            labels[j] = label
+            i += 1
+            if i % self.batch_size == 0:
+                yield (batchid,data1,data2,labels)
+                data1 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+                data2 = np.zeros((self.batch_size,3,224,224),dtype="float64")
+                labels = np.zeros((self.batch_size))
+                batchid += 1
+            elif i >= self.batch_size:
+                yield (batchid,data1,data2,labels)
+
+
+    def get_batch_data(self,i, j):
+        img1 = self.images[i]
+        img2 = self.images[j]
+        l1 = self.labels[i]
+        l2 = self.labels[j]
+        if l1 == l2: 
+            label = 1
+        else:
+            label = 1
+        return (img1.numpy(), img2.nupy(), label)
+    
+    def __len__(self):
+       return len(self.data_idx)
+
+    def _init_maping(self,shuffle):
+        n = len(self.data)
+        total = (3*n)**2
+        self.data_idx = []
+        for i in range(3*n):
+            for j in range(3*n):
+                self.data_idx.append((i,j))
+        
+        if shuffle is True:
+            self.data_idx = np.random.shuffle(self.data_idx)
+
+    def _load_data_to_memory(self):       
+        al_transform = AlphaBgTransform(alpha=False)
+        transform = transforms.Compose([
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        self.images = []
+        self.labels = []
+        for item in self.data:
+            label = item["id"]
+            image_name = f"{self.data_path}/images/{label}/{item['file_name']}"
+            img = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
+            img = al_transform(img)
+            (cu,co) = get_under_n_over_channel(im=img)
+            img = transform(img)
+            cu = transform(cu)
+            co = transform(co)
+
+            self.images.append(img)
+            self.labels.append(label)
+            self.images.append(cu)
+            self.labels.append(label)
+            self.images.append(co)
+            self.labels.append(label)
+
+    
+            
+
+
+            
+
+
