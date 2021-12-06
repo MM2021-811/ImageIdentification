@@ -244,12 +244,12 @@ class AlphaWeightedVgg16Net(nn.Module):
             nn.Linear(512, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
-            nn.Linear(4096, 2048),
-            nn.ReLU(inplace=True),
-             nn.Dropout(p=dropout),
-            nn.Linear(2048, 1024),
-            nn.ReLU(inplace=True),
-            nn.Linear(1024, 512),
+            # nn.Linear(4096, 2048),
+            # nn.ReLU(inplace=True),
+            #  nn.Dropout(p=dropout),
+            # nn.Linear(2048, 1024),
+            # nn.ReLU(inplace=True),
+            nn.Linear(4096, 512),
         )
         
         self.discritor = nn.Sequential(
@@ -293,17 +293,15 @@ class AlphaWeightedAlexNet(nn.Module):
             nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
-            nn.Linear(4096, 2048),
-            nn.ReLU(inplace=True),
-            nn.Linear(2048, 1024),
-            nn.Linear(1024, 512),
+            nn.Linear(4096, 4096),
+            nn.Linear(4096, 512),
         )
 
         self.discritor = nn.Sequential(
-            nn.Linear(2 * 512, 2048),
-            nn.Linear(2048, 512),
-            nn.Linear(512, 2),
-            nn.Softmax(1)
+            nn.Linear(2 * 512, 4096),
+            nn.Linear(4096, 2),
+            # nn.Softmax(1)
+            nn.Sigmoid()
         )
 
     def _features(self,x):

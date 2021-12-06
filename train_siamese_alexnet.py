@@ -20,7 +20,7 @@ from util.trainingutil import (
 )
 import os
 import torchsummary
-
+from pprint import pprint
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -36,6 +36,10 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss = F.mse_loss(output,labels)
         # loss = F.cross_entropy(output, labels)
         # loss = F.l1_loss(output,labels)
+
+        # pprint(output)
+        # pprint(labels)
+        # loss = torch.square(loss)
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -69,7 +73,9 @@ def test(model, device, test_loader):
             test_loss +=  F.l1_loss(output,labels).item()
             # get the index of the max log-probability
             output = torch.round(output)
-            correct += torch.sum(output == labels)/2
+            y = output[output == labels]
+
+            correct += torch.sum(y)
 
     test_loss /= len(test_loader)
     test_accuracy = 100.0 * correct / len(test_loader)
