@@ -10,3 +10,10 @@ albumentations
 argparse
 numpy
 pandas
+timm
+torchsummary
+transformers
+iprogress
+ipywidgets
+scipy
+rembg
