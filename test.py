@@ -108,7 +108,7 @@ def test_alphanet():
     # feature = vutil.extract_feature(image=image_name)
 
     testutil = TestUtil(model_name="alphaalex",data_path="./data/zerobox_nobg")
-    (accuracy, cmatrix,wrong_results) = testutil.test()
+    (accuracy, cmatrix,wrong_results) = testutil.test_alphaalex()
 
     pprint(f"Final accuracy: {accuracy}")
     pprint(wrong_results)

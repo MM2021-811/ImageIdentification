@@ -4,7 +4,6 @@
 import numpy as np
 from torch._C import device
 from util.vearchutil import VearchUtil
-from util.testutil import TestUtil
 import cv2
 import matplotlib.pyplot as plt
 from PIL import Image

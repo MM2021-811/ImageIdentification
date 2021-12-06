@@ -9,6 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 from typing import Optional, List, Callable
 from torchvision.models.googlenet import BasicConv2d
 import time
+import numpy as np
 import torchvision.models as models
 from util.trainingutil import (
     AlphaAlexNet,
@@ -67,8 +68,8 @@ def test(model, device, test_loader):
             # sum up batch loss
             test_loss +=  F.l1_loss(output,labels).item()
             # get the index of the max log-probability
-
-            correct += output.eq(labels).sum().item()
+            output = torch.round(output)
+            correct += torch.sum(output == labels)/2
 
     test_loss /= len(test_loader)
 

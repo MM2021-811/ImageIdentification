@@ -90,7 +90,7 @@ class VearchUtil:
 
         return response.text
 
-    def search_by_image(self, keyword: str = None, image = None, feature: list = None) -> dict:
+    def search_by_image(self, keyword: str = None, image = None, feature: list = None, return_records:int = 1) -> dict:
         """[summary]            
         Args:
             image ([type]): can be str: image file name or numpy.ndarray returned by cv2.read(image)
@@ -174,18 +174,26 @@ class VearchUtil:
         found_total = data.get("hits").get("total",0)
         if(found_total > 0):
             hits = data.get("hits").get("hits")
-            f_hit = hits[0]
-            item = dict()
-            item["score"] = f_hit.get("_score")
-            item["vearch_id"] = f_hit.get("_id")
-            item["data"] = f_hit.get("_source")
+            cnt = min(found_total,return_records)
+            items = []
+            for i in range(cnt):
+                f_hit = hits[0]
+                item = dict()
+                item["score"] = f_hit.get("_score")
+                item["vearch_id"] = f_hit.get("_id")
+                item["data"] = f_hit.get("_source")
+                items.append(item)
+            
+            if return_records == 1:
+                return items[0]
+            else:
+                return items
         else:
             item = item = dict()
             item["score"] = -1
             item["vearch_id"] = None
             item["data"] = ""
-
-        return item
+            return item
 
     def delte_image_index(self, uuid: str):
         """Remove one image index   
