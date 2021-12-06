@@ -118,8 +118,8 @@ def test_alphanet():
 
 
 
-test_alphanet()
-# test_createmeta()
+# test_alphanet()
+test_createmeta()
 # test_siamese()
 # test_model()
 # test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')

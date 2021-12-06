@@ -341,13 +341,20 @@ class SiameseLoader(object):
         else:
             meta_file = f"{self.data_path}/meta_test.json"
 
+        c_file = f"{self.data_path}/meta_classes.json"
+        self.classes = json.load(open(c_file,"r"))
         self.data = json.load(open(meta_file,"r"))
-        self._init_maping(shuffle)
+
+        # self._init_maping(shuffle)
         self._load_data_to_memory()
         
-        
 
-    def __iter__(self):
+    def __len__(self):
+        #    return len(self.data_idx)
+        n = len(self.images) 
+        return n * 10 * 10
+
+    def __iter2__(self):
         batchid = 0
         i = 0
         data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
@@ -368,10 +375,10 @@ class SiameseLoader(object):
                 data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
                 labels = np.zeros((self.batch_size,2))
                 batchid += 1
-            elif i >= len(self.data_idx):
-                # last not whole batch
-                yield (data1,data2,labels)
-
+        idx = i % self.batch_size
+        if idx > 0:
+            # last not whole batch
+            yield (data1[:idx,:,:],data2[:idx,:,:],labels[:idx,:,:])
 
     def get_batch_data(self,i, j):
         img1 = self.images[i]
@@ -384,9 +391,6 @@ class SiameseLoader(object):
             label = [0,1]
         return (img1.numpy(), img2.numpy(), label)
 
-    def __len__(self):
-       return len(self.data_idx)
-
     def _init_maping(self,shuffle):
         n = len(self.data)
         total = (3*n)**2
@@ -398,7 +402,7 @@ class SiameseLoader(object):
         if shuffle is True:
             np.random.shuffle(self.data_idx)
 
-    def _load_data_to_memory(self):
+    def _load_data_to_memory2(self):
         cache_file = f"{self.data_path}/siamese_data_{self.train}.pkl"
         print(f"Training {self.train} cache file: {cache_file}")
         
@@ -422,7 +426,7 @@ class SiameseLoader(object):
         self.images = []
         self.labels = []
         for item in self.data:
-            label = item["id"]
+            label = item["class"]
             image_name = f"{self.data_path}/images/{label}/{item['file_name']}"
             img = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
             img = al_transform(img)
@@ -442,7 +446,121 @@ class SiameseLoader(object):
         pickle.dump(data,open(cache_file,"wb"))
 
 
+    def _load_data_to_memory(self):
+        cache_file = f"{self.data_path}/siamese_data_{self.train}_1.pkl"
+        print(f"Training {self.train} cache file: {cache_file}")
+        
+        if self.use_cache is True:
+            if os.path.exists(cache_file):
+                try:
+                    data = pickle.load(open(cache_file,"rb"))
+                    self.images = data["images"]
+                    self.cls_images = data["cls_images"]
+                    return
+                except:
+                    pass
 
+        al_transform = AlphaBgTransform(alpha=False)
+        transform = transforms.Compose([
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        self.images = dict()
+        self.cls_images = dict()
+        for cls in self.classes:
+            self.cls_images[cls] = []            
+
+        for item in self.data:
+            label = item["class"]
+            key = f"{label}_{item['file_name']}"
+            image_name = f"{self.data_path}/images/{label}/{item['file_name']}"
+            img = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
+            img = al_transform(img)
+            (cu,co) = get_under_n_over_channel(im=img)
+            img = transform(img)
+            cu = transform(cu)
+            co = transform(co)
+
+            item["image"] = img
+            item["cu"] = cu
+            item["co"] = co
+            self.images[key] = item
+            self.cls_images[label].append(key)
+        
+        classes = list(self.cls_images.keys())
+        for cls in classes:
+            if len(self.cls_images[cls]) == 0:
+                del self.cls_images[cls]
+
+        data = {"cls_images":self.cls_images, "images":self.images}
+        pickle.dump(data,open(cache_file,"wb"))
+
+    def __iter__(self):
+        n = len(self.images)        
+        data1 = np.zeros((10 * n,3,224,224),dtype="float32")
+        data2 = np.zeros((10 * n,3,224,224),dtype="float32")
+        labels = np.zeros((10 * n ,2))
+        idx = 0
+        # total = self.__len__()
+        cnt = 0
+        for i in range(10):
+            idx = 0
+            for key in self.images:
+                cnt += 1
+                # get 5 same class images 
+                # 2 from cu, co channel, 3 from other images
+                item = self.images[key]
+                cls = item["class"]                
+
+                data1[idx,:,:,:] = item["image"]
+                data2[idx,:,:,:] = item["cu"]
+                labels[idx,:] = [1,0]
+                idx += 1
+
+                data1[idx,:,:,:] = item["image"]
+                data2[idx,:,:,:] = item["co"]
+                labels[idx,:] = [1,0]
+                idx += 1
+                
+                skeys = self._get_random_same_class_image(cls,count=3)
+                for skey in skeys:
+                    data1[idx,:,:,:] = item["image"]
+                    data2[idx,:,:,:] = self.images[skey]["image"]
+                    labels[idx,:] = [1,0]
+                    idx += 1
+
+                # get 5 different class images random choose
+                rkeys = self._get_random_diff_class_image(cls,count=5)
+                for rkey in rkeys:
+                    data1[idx,:,:,:] = item["image"]
+                    data2[idx,:,:,:] = self.images[rkey]["image"]
+                    labels[idx,:] = [0,1]
+                    idx += 1
+            
+            yield (data1,data2,labels)
+
+    def _get_random_same_class_image(self,cls,count=3):
+        keys = self.cls_images[cls]
+        keys = np.array(keys)
+        m = np.random.choice(len(keys), size=count, replace=True)       
+        return keys[m]
+
+    def _get_random_diff_class_image(self,cls,count=5):
+        classes = list(self.cls_images.keys())
+        classes.sort()
+        classes.remove(cls)
+    
+        classes = np.array(classes)
+        m = np.random.choice(len(classes), size=count, replace=True)
+        
+        ret = []
+        for cls in classes[m]:
+            key = self._get_random_same_class_image(cls,count=1)
+            ret.append(key[0])
+
+        return ret
 
 
 
