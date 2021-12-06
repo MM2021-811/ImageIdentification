@@ -102,12 +102,20 @@ def test_createmeta():
 
 
 def test_alphanet():
-    util = TestUtil(model_name="alphaalex",data_path="./data/zerobox_nobg")
-    vutil = VearchUtil(model_name="alphaalex")
-    image_name = "./data/zerobox/images/blackbottles/00001.png"
-    feature = vutil.extract_feature(image=image_name)
+    # util = TestUtil(model_name="alphaalex",data_path="./data/zerobox_nobg")
+    # vutil = VearchUtil(model_name="alphaalex")
+    # image_name = "./data/zerobox/images/blackbottles/00001.png"
+    # feature = vutil.extract_feature(image=image_name)
 
-    pprint(len(feature))
+    testutil = TestUtil(model_name="alphaalex",data_path="./data/zerobox_nobg")
+    (accuracy, cmatrix,wrong_results) = testutil.test()
+
+    pprint(f"Final accuracy: {accuracy}")
+    pprint(wrong_results)
+    pprint(cmatrix)
+    print("Wrong results:")
+    pprint(wrong_results)
+
 
 
 test_alphanet()
