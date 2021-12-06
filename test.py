@@ -1,3 +1,4 @@
+from numpy import mod
 from tests.test1 import test_logger
 from util.vearchutil import VearchUtil
 from util.testutil import TestUtil
@@ -7,6 +8,7 @@ from init_vearch_local import create_space,delete_space, create_db
 from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet, SiameseLoader
 import cv2
 from util.load_bottles import create_dataset_metadata
+import numpy as np
 
 # create_food101_subset()
 # load_data_to_vearch()
@@ -98,7 +100,18 @@ def test_siamese():
 def test_createmeta():
     create_dataset_metadata(data_path="./data/zerobox_nobg/",num_images=10000,test_percent=0.2)
 
-test_createmeta()
+
+def test_alphanet():
+    util = TestUtil(model_name="alphaalex",data_path="./data/zerobox_nobg")
+    vutil = VearchUtil(model_name="alphaalex")
+    image_name = "./data/zerobox/images/blackbottles/00001.png"
+    feature = vutil.extract_feature(image=image_name)
+
+    pprint(len(feature))
+
+
+test_alphanet()
+# test_createmeta()
 # test_siamese()
 # test_model()
 # test_transform(image_name= './data/zerobox_nobg/images/white02/output0064.png')
