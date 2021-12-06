@@ -14,6 +14,8 @@ import logging.config
 logging.config.dictConfig(LOGGING_CONF)
 logger = logging.getLogger(__name__)
 
+os.environ['CUDA_VISIBLE_DEVICES'] ='4'
+
 
 class ParameterError(Exception):
     pass
