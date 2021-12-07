@@ -23,6 +23,7 @@ from util.exposure_enhancement import enhance_image_exposure, get_under_n_over_c
 import json
 import pickle
 import os
+import PIL
 
 class AlphaBgTransform:
     """Adjsut image size based on alpha mask
@@ -259,11 +260,18 @@ class AlphaAlexNet(nn.Module):
             y = inv_normalize(x1)
             y = y.permute(1,2,0) * 255
             y = y.cpu().detach().numpy()
-            (cu,co) = get_under_n_over_channel(im=y)            
-            cu = torch.tensor(np.array(cu),dtype=torch.float32).permute(2,0,1)
-            co = torch.tensor(np.array(co),dtype=torch.float32).permute(2,0,1)
-            x2 = norm(cu).to(device)    
-            x3 = norm(co).to(device)
+            # (cu,co) = get_under_n_over_channel(im=y)            
+            # cu = torch.tensor(np.array(cu),dtype=torch.float32).permute(2,0,1)
+            # co = torch.tensor(np.array(co),dtype=torch.float32).permute(2,0,1)
+            # x2 = norm(cu).to(device)    
+            # x3 = norm(co).to(device)
+
+            # testing model
+            x2 = torch.transpose(x1,dim0=1,dim1=2)
+            y = Image.fromarray(np.uint8(y))
+            x3 = PIL.ImageOps.invert(y)
+            x3 = torch.tensor(np.array(x3),dtype=torch.float32).permute(2,0,1)
+            x3 = norm(x3)
 
             result[i,0:3,:,:] = x1
             result[i,3:6,:,:] = x2
