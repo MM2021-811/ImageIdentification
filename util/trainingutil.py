@@ -2,6 +2,7 @@
 # AlphaAlexNet code is based on torchvision AlexNet
 #
 import numpy as np
+from pymatting.util.util import normalize
 from torch._C import device
 from util.vearchutil import VearchUtil
 import cv2
@@ -182,55 +183,110 @@ class AlphaBgTransform:
             img = x
         return img
 
+    @staticmethod
+    def de_normalize(t:torch.tensor,mean,std):
+        inv_normalize = transforms.Normalize(
+            mean= [-m/s for m, s in zip(mean, std)],
+            std= [1/s for s in std]
+            )
+        return inv_normalize
+
 class ParameterError(Exception):
     pass
 
-class AlphaAlexNet(nn.Module):
-    """Adding Alpha BG info as a descriptor of shapes
+class AlexNet(nn.Module):
+    def __init__(self,device=None):
+        super(AlexNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels= 96, kernel_size= 11, stride=4, padding=2 )
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride= 1, padding= 2)
+        self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, stride= 1, padding= 1)
+        self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.fc1  = nn.Linear(in_features= 9216, out_features= 4096)
+        self.fc2  = nn.Linear(in_features= 4096, out_features= 4096)
+        self.fc3 = nn.Linear(in_features=4096 , out_features=10)
 
-    Args:
-        AlexNet (num_classes): default 1000
-                droput: default 0.5
-    """
-    def __init__(self, num_classes: int = 1000,dropout: float = 0.5) -> None:
-        super(AlphaAlexNet,self).__init__()
+    def forward(self,x):
 
-        self.features = nn.Sequential(
-            nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2), # channel 3->4
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-        )
-
-        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=dropout),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[1] <=3:
-            raise ParameterError("AlphaAlexNet expecting input is 4*224*224 ARGB tensor")
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
         return x
 
+class AlphaAlexNet(nn.Module):
+    """Adding Alpha CU and CO channel info as a descriptor of shapes
+
+    Args:
+        AlphaAlexNet 
+    """
+    def __init__(self):
+        super(AlphaAlexNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=9, out_channels= 96, kernel_size= 11, stride=4, padding=2 )
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride= 1, padding= 2)
+        self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, stride= 1, padding= 1)
+        self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.fc1  = nn.Linear(in_features= 9216, out_features= 4096)
+        self.fc2  = nn.Linear(in_features= 4096, out_features= 4096)
+        self.fc3 = nn.Linear(in_features=4096 , out_features=10)
+
+    def _getcuco(self,x):
+        #convert from 3 channels to 9 channels
+        mean=[0.485, 0.456, 0.406]
+        std=[0.229, 0.224, 0.225]
+        inv_normalize = transforms.Normalize(
+            mean= [-m/s for m, s in zip(mean, std)],
+            std= [1/s for s in std]
+            )
+        norm = transforms.Normalize(mean,std)
+
+        device = x.device
+        (d,c,h,w) = x.shape
+        result = torch.tensor(np.zeros((d,9,h,w),dtype="float32")).to(device)
+        for i in range(d):
+            x1 = x[i,:,:,:]
+            y = inv_normalize(x1)
+            y = y.permute(1,2,0) * 255
+            y = y.cpu().detach().numpy()
+            (cu,co) = get_under_n_over_channel(im=y)            
+            cu = torch.tensor(np.array(cu),dtype=torch.float32).permute(2,0,1)
+            co = torch.tensor(np.array(co),dtype=torch.float32).permute(2,0,1)
+            x2 = norm(cu).to(device)    
+            x3 = norm(co).to(device)
+
+            result[i,0:3,:,:] = x1
+            result[i,3:6,:,:] = x2
+            result[i,6:9,:,:] = x3
+        
+        return result
+
+    def forward(self,x):
+        # convert 3 channel to 9 chanel
+        x = self._getcuco(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 class AlphaWeightedVgg16Net(nn.Module):
     def __init__(self,device="cpu",dropout: float = 0.5) -> None:
