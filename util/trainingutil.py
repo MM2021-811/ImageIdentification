@@ -316,6 +316,56 @@ class AlphaWeightedAlexNet(nn.Module):
         x = self.feat_layer(x)
         return x
 
+    def forward(self, x1):
+
+        x1 = self.features(x1)
+        x1 = x1.view(x1.size()[0], -1)#make it suitable for fc layer.
+
+        x2 = self.features(x2)
+        x2 = x2.view(x2.size()[0], -1)#make it suitable for fc layer.
+
+        x3 = self.features(x3)
+        x3 = x3.view(x3.size()[0], -1)#make it suitable for fc layer.
+
+        output = torch.cat((x1, x2),1)
+        output = self.discritor(output)
+        return output
+
+class SiameseAlexNet(nn.Module):
+    def __init__(self,device="cpu",dropout: float = 0.5) -> None:
+        super().__init__()
+        self.alexnet = models.alexnet(pretrained=True)
+        self.alexnet.to(device)
+        self.alexnet.eval()
+
+        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.feat_layer = nn.Sequential(
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 4096),
+            nn.Linear(4096, 512),
+        )
+
+        self.discritor = nn.Sequential(
+            nn.Linear(2 * 512, 4096),
+            nn.Linear(4096, 2),
+            # nn.Softmax(1)
+            nn.Sigmoid()
+        )
+
+    def _features(self,x):
+        with torch.no_grad():
+            x = self.alexnet.features(x)
+        return x
+
+    def features(self,x):
+        x = self._features(x)
+        x = self.avgpool(x)
+        x = x.view(x.size()[0],-1)
+        x = self.feat_layer(x)
+        return x
+
     def forward(self, input1, input2):
         output1 = self.features(input1)
         output1 = output1.view(output1.size()[0], -1)#make it suitable for fc layer.
@@ -325,6 +375,7 @@ class AlphaWeightedAlexNet(nn.Module):
         output = torch.cat((output1, output2),1)
         output = self.discritor(output)
         return output
+
 
 class SiameseLoader(object):
     def __init__(self,data_path="./data/zerobox_nobg", train=True, batch_size=64,shuffle=True, use_cache=True) -> None:
