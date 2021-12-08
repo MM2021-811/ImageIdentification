@@ -1,3 +1,4 @@
+# source: https://medium.com/analytics-vidhya/alexnet-a-simple-implementation-using-pytorch-30c14e8b6db2
 # To add a new cell, type '# %%'
 # To add a new markdown cell, type '# %% [markdown]'
 # %%
@@ -54,7 +55,8 @@ if os.path.exists(model_file):
     model.to(device)
 
 ## Loss and optimizer
-learning_rate = 1e-4 #I picked this because it seems to be the most used by experts
+# learning_rate = 1e-4 #I picked this because it seems to be the most used by experts
+learning_rate = 1e-7 #I picked this because it seems to be the most used by experts
 load_model = True
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr= learning_rate) #Adam seems to be the most popular for deep learning
