@@ -279,6 +279,19 @@ class AlphaAlexNet(nn.Module):
         
         return result
 
+    def features(self,x):
+        # convert 3 channel to 9 chanel
+        x = self._getcuco(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+        
+        return x
     def forward(self,x):
         # convert 3 channel to 9 chanel
         x = self._getcuco(x)

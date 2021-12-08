@@ -34,8 +34,8 @@ class TestUtil(object):
 
     def test(self):
         logger.info(f"TestUtil test {self.model_name}")
-        if self.model_name == "alphaalex":
-            return self.test_alphaalex()
+        # if self.model_name == "alphaalex":
+        #     return self.test_alphaalex()
 
         meta = json.load(open(f"{self.data_path}/meta_test.json", "r"))
         results = list()
@@ -50,7 +50,7 @@ class TestUtil(object):
             ret = self.util.search_by_image(image=fname)
             if ret["score"] != -1:
                 # found result
-                result["test_class"] = ret["data"]["sid"]
+                result["test_class"] = ret["data"]["tags"][0]
                 result["test_file_name"] = ret["data"]["image_name"]
             else:
                 result["test_class"] = "notfound"  # notfound

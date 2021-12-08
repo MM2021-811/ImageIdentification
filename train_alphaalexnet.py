@@ -21,6 +21,7 @@ from torchvision.utils import save_image
 import torch.optim as optim
 from util.trainingutil import AlphaAlexNet
 from tqdm import tqdm
+import os
 
 # %%
 #creating a dinstinct transform class for the train, validation and test dataset
@@ -47,6 +48,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') #training 
 model = AlphaAlexNet() #to compile the model
 model = model.to(device=device) #to send the model for training on either cuda or cpu
 
+model_file = "./models/alexnet_alpha.pth"
+if os.path.exists(model_file):
+    model.load_state_dict(torch.load(model_file)) 
+    model.to(device)
+
 ## Loss and optimizer
 learning_rate = 1e-4 #I picked this because it seems to be the most used by experts
 load_model = True
@@ -54,7 +60,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr= learning_rate) #Adam seems to be the most popular for deep learning
 
 best_accuracy = 0
-for epoch in range(50): #I decided to train the model for 50 epochs
+for epoch in range(500): #I decided to train the model for 50 epochs
     loss_ep = 0
     
     for batch_idx, (data, targets) in tqdm(enumerate(train_dl)):
@@ -73,7 +79,7 @@ for epoch in range(50): #I decided to train the model for 50 epochs
     with torch.no_grad():
         num_correct = 0
         num_samples = 0
-        for batch_idx, (data,targets) in tqdm(enumerate(val_dl)):
+        for batch_idx, (data,targets) in enumerate(val_dl):
             data = data.to(device=device)
             targets = targets.to(device=device)
             ## Forward Pass
@@ -85,12 +91,12 @@ for epoch in range(50): #I decided to train the model for 50 epochs
         accuracy = float(num_correct) / float(num_samples) * 100
         if best_accuracy < accuracy:
             best_accuracy = accuracy
-            torch.save(model.state_dict(), "./models/alexnet_alpha.pth")
+            torch.save(model.state_dict(), model_file)
         print(
             f"{epoch}: Got {num_correct} / {num_samples} with accuracy {accuracy:.2f}"
         )    
     
-    if best_accuracy > 82:
+    if best_accuracy > 92:
         print("Reached 82% Quit")
         break
                 

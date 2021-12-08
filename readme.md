@@ -72,6 +72,18 @@ The license for this repo is under MIT license. Most of dependable libraries and
   [Library code](https://github.com/danielgatis/rembg)
   [U2Net](https://github.com/xuebinqin/U-2-Net)
 
+7. Differnet
+  [code](https://github.com/marco-rudolph/differnet)
+  [paper](https://arxiv.org/abs/2008.12577)
+  ```
+  @unknown{unknown,
+    author = {Rudolph, Marco and Wandt, Bastian and Rosenhahn, Bodo},
+    year = {2020},
+    month = {08},
+    pages = {},
+    title = {Same Same But DifferNet: Semi-Supervised Defect Detection with Normalizing Flows}
+    }
+  ```
 
 # Installation
 All commands list here are sample commands. And this is based on Linux(Ubuntu). If you are running on other OS, please issue the command accordingly to your OS.
