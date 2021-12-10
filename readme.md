@@ -113,23 +113,107 @@ docker-compose up -d
 # docker-compose down -v
 
 ```
+## Prepare dataset and pre-trained model
+1. download [dataset_models.tar.gz](https://drive.google.com/file/d/1fDzs5_Ixxs_QeI2Oo5VmG7dJZMVaov9n/view?usp=sharing) dataset
+2. unzip the dataset and models to current folder. `tar -xvf dataset_models.tar.gz`
 
-## Inititalized data
 
-```bash
-./init.sh
+# Main function and notebook
+The main notebook is report_demo.ipynb. Please reference this one for details of this project work.
+
+
+# Other files in this project
 ```
+.
+├── Alexnet_2bottle.ipynb
+├── Alexnet_2classes.ipynb
+├── Alexnet_4bottle.ipynb
+├── Alexnet_4bottle_unbiased.ipynb
+├── alexnet_training.ipynb
+├── alphaalexnet_training.ipynb
+├── bg_removed.png
+├── color_corrected.png
+├── colorspace.ipynb
+├── compare_models.ipynb
+├── config
+│   ├── __init__.py
+│   ├── logging.py
+│   ├── __pycache__
+│   ├── settings.py
+│   └── vearch_config.py
+├── data
+│   ├── zerobox
+│   ├── zerobox_light
+│   └── zerobox_nobg
+├── docker-compose.yml
+├── enhanced_bottle.png
+├── images
+│   ├── architecture.png
+│   ├── Siamese.png
+│   └── workflow.png
+├── index_images.sh
+├── init.sh
+├── init_vearch_local.py
+├── logs
+│   ├── app.log
+│   └── readme.md
+├── maske.png
+├── models
+│   ├── alexnet_alpha.pth
+│   ├── alexnet_org.pth
+│   ├── bottle_siamese.pth
+│   └── bottle_siamese_tmp.pth
+├── readme.md
+├── report_demo.ipynb
+├── requirements.txt
+├── test.png
+├── test.py
+├── train_alexnet.py
+├── train_alphaalexnet.py
+├── train_googlenet.py
+├── train_siamese_alexnet.py
+├── train_siamese_vgg16net.py
+├── util
+│   ├── exposure_enhancement.py
+│   ├── huggingface.ipynb
+│   ├── image_extract
+│   ├── __init__.py
+│   ├── latransformer_util.py
+│   ├── load_bottles.py
+│   ├── __pycache__
+│   ├── testutil.py
+│   ├── trainingutil.py
+│   └── vearchutil.py
+├── vearch
+│   ├── config_plugin.py
+│   ├── config.toml
+│   └── Dockerfile
+├── vearch_plugin
+│   ├── bin
+│   ├── Dockerfile
+│   ├── Dockerfile.NonChina
+│   ├── images
+│   ├── __init__.py
+│   ├── README.md
+│   └── src
+├── vgg16.ipynb
+```
+## Some script and functions
+utl/trainingutil.py  Models of AlphaAlexNet, SiameseAlexNet
+utl/testutil.py testing and benchmark utilities
+Alexnet_*.ipynb Alexnet related scripts.
 
-## Prepare dataset
-1. download [zeroboxbottles](https://drive.google.com/file/d/1r-w3dznBSpqB83UJz9OvjHTk6cdUq-b0/view?usp=sharing) dataset
-2. unzip the dataset to ./data. After zip the folder should be `./data/zerobx/`
-   
+vearch/ Vearch code(third party)
+vearch_plugin/ vearch plugin (third party)
+
+
+
 ## Index subset image
 run `python util/load_bottles.py`. This script will load images and index them in vearch. 
 This step may requires to run based on the test cases. When using different model(vgg, resnet and etc) must index them with same model
 
 ## Test different model
-The test images are listed in meta_test.json. 
+The test images are listed in meta_test.json.
 
 Highlevel steps
 1. create new model and put under `./util/image_extract/`
