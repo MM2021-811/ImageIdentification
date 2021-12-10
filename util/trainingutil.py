@@ -290,7 +290,7 @@ class AlphaAlexNet(nn.Module):
         x = F.relu(self.conv4(x))
         x = F.relu(self.conv5(x))
         x = self.maxpool(x)
-        
+
         return x
     def forward(self,x):
         # convert 3 channel to 9 chanel
@@ -424,13 +424,17 @@ class SiameseAlexNet(nn.Module):
             nn.Linear(4096, 512),
         )
 
-        self.discritor = nn.Sequential(
-            nn.Linear(2 * 512, 4096),
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=dropout),
+            nn.Linear(18432, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
             nn.Linear(4096, 2),
-            # nn.Softmax(1)
-            nn.Sigmoid()
         )
 
+        
     def _features(self,x):
         with torch.no_grad():
             x = self.alexnet.features(x)
@@ -439,8 +443,7 @@ class SiameseAlexNet(nn.Module):
     def features(self,x):
         x = self._features(x)
         x = self.avgpool(x)
-        x = x.view(x.size()[0],-1)
-        x = self.feat_layer(x)
+        x = torch.flatten(x, 1)
         return x
 
     def forward(self, input1, input2):
@@ -450,7 +453,7 @@ class SiameseAlexNet(nn.Module):
         output2 = output2.view(output2.size()[0], -1)
 
         output = torch.cat((output1, output2),1)
-        output = self.discritor(output)
+        output = self.classifier(output)
         return output
 
 

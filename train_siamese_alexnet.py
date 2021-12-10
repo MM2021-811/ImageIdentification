@@ -13,7 +13,7 @@ import numpy as np
 import torchvision.models as models
 from util.trainingutil import (
     AlphaAlexNet,
-    AlphaWeightedAlexNet,
+    SiameseAlexNet,
     ParameterError,
     AlphaBgTransform,
     SiameseLoader,
@@ -170,7 +170,7 @@ def main():
     train_loader = SiameseLoader(batch_size=60)
     test_loader = SiameseLoader(batch_size=250,train=False)
 
-    model = AlphaWeightedAlexNet(device=device).to(device)
+    model = SiameseAlexNet(device=device).to(device)
     model.train()
     
     # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
