@@ -414,6 +414,7 @@ class SiameseAlexNet(nn.Module):
         self.alexnet = models.alexnet(pretrained=True)
         self.alexnet.to(device)
         self.alexnet.eval()
+        self.device = device
 
         self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
         self.feat_layer = nn.Sequential(
@@ -455,6 +456,20 @@ class SiameseAlexNet(nn.Module):
         output = torch.cat((output1, output2),1)
         output = self.classifier(output)
         return output
+
+    def predict(self,image1, image2):
+        transform = transforms.Compose([
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            AlphaBgTransform(alpha=False),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        with torch.no_grad():
+            img1 = transform(image1).unsqueeze(0).to(self.device)
+            img2 = transform(image2).unsqueeze(0).to(self.device)
+            x = F.softmax(self.forward(img1,img2))
+            return x
 
 
 class SiameseLoader(object):

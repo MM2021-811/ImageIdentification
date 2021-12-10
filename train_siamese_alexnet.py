@@ -33,9 +33,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         output = model(data1,data2)
         # loss = F.nll_loss(output, labels) # not supported
-        loss = F.mse_loss(output,labels)
+        # loss = F.mse_loss(output,labels)
         # loss = F.cross_entropy(output, labels)
-        # loss = F.l1_loss(output,labels)
+        loss = F.l1_loss(output,labels)
 
         # pprint(output)
         # pprint(labels)
@@ -72,6 +72,7 @@ def test(model, device, test_loader):
             # sum up batch loss
             test_loss +=  F.l1_loss(output,labels).item()
             # get the index of the max log-probability
+            # output = F.softmax(output,dim=1)
             output = torch.round(output)
             y = output[output == labels]
 
