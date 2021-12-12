@@ -1,4 +1,3 @@
-from tests.test1 import test_logger
 from util.vearchutil import VearchUtil
 from util.trainingutil import AlphaBgTransform,AlphaWeightedAlexNet
 from pprint import pprint
