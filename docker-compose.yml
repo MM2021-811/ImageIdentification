@@ -43,6 +43,6 @@ services:
       - ./webapp/media:/upload_images
       - ./config/vearch_config.py:/app/src/config.py
     ports:
-      - 4101:4101
+      - 4102:4101
     networks:
       - webapp_network

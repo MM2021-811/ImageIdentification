@@ -14,9 +14,11 @@ import logging.config
 import time
 logging.config.dictConfig(LOGGING_CONF)
 logger = logging.getLogger(__name__)
-
 import http.client
 http.client._MAXLINE = 655360
+
+os.environ['CUDA_VISIBLE_DEVICES'] ='4'
+
 
 class ParameterError(Exception):
     pass
