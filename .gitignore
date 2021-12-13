@@ -283,3 +283,4 @@ logs/
 work/
 data/
 models/
+*.gz

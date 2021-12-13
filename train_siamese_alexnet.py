@@ -13,14 +13,14 @@ import numpy as np
 import torchvision.models as models
 from util.trainingutil import (
     AlphaAlexNet,
-    AlphaWeightedAlexNet,
+    SiameseAlexNet,
     ParameterError,
     AlphaBgTransform,
     SiameseLoader,
 )
 import os
 import torchsummary
-
+from pprint import pprint
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -36,6 +36,10 @@ def train(args, model, device, train_loader, optimizer, epoch):
         # loss = F.mse_loss(output,labels)
         # loss = F.cross_entropy(output, labels)
         loss = F.l1_loss(output,labels)
+
+        # pprint(output)
+        # pprint(labels)
+        # loss = torch.square(loss)
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -68,20 +72,23 @@ def test(model, device, test_loader):
             # sum up batch loss
             test_loss +=  F.l1_loss(output,labels).item()
             # get the index of the max log-probability
+            # output = F.softmax(output,dim=1)
             output = torch.round(output)
-            correct += torch.sum(output == labels)/2
+            y = output[output == labels]
+
+            correct += torch.sum(y)
 
     test_loss /= len(test_loader)
-
+    test_accuracy = 100.0 * correct / len(test_loader)
     print(
         "\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.12f}%)\n".format(
             test_loss,
             correct,
             len(test_loader),
-            100.0 * correct / len(test_loader),
+            test_accuracy,
         )
     )
-
+    return test_accuracy
 
 def main():
     # Training settings
@@ -161,31 +168,38 @@ def main():
     #     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     # ])
 
-    train_loader = SiameseLoader()
-    test_loader = SiameseLoader(train=False)
+    train_loader = SiameseLoader(batch_size=60)
+    test_loader = SiameseLoader(batch_size=250,train=False)
 
-    model = AlphaWeightedAlexNet(device=device).to(device)
+    model = SiameseAlexNet(device=device).to(device)
     model.train()
     
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    optimizer = optim.Adam(model.parameters(),lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     start = time.time()
     # load model from internal training
-    checkpoint_model = "./models/bottle_siamese_tmp.pt"
+    checkpoint_model = "./models/bottle_siamese_tmp.pth"
+    mode_saved_file = "./models/bottle_siamese.pth"
 
     if os.path.exists(checkpoint_model):
         model.load_state_dict(torch.load(checkpoint_model))
+    
+    best_accuracy = 0
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(model, device, test_loader)
+        accuracy = test(model, device, test_loader)        
         scheduler.step()
-        torch.save(model.state_dict(), checkpoint_model)
+
+        if best_accuracy < accuracy:
+            best_accuracy = accuracy
+            torch.save(model.state_dict(), checkpoint_model)
+            if args.save_model:
+                torch.save(model.state_dict(), mode_saved_file)
+        
     end = time.time()
     print(f"Elapsed Time: {end - start}")
-
-    if args.save_model:
-        torch.save(model.state_dict(), "./models/bottle_siamese.pt")
 
 
 if __name__ == "__main__":

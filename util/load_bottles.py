@@ -34,6 +34,7 @@ def create_dataset_metadata(data_path="./data/zerobox",num_images = 100, test_pe
     """
     logger.info(f"create_dataset_metadata({num_images})")
     classes = os.listdir(f"{data_path}/images")
+    classes.sort()
     meta_train = []
     meta_test = []
     for c in classes:
@@ -42,9 +43,10 @@ def create_dataset_metadata(data_path="./data/zerobox",num_images = 100, test_pe
         images = os.listdir(os.path.join(data_path,"images",c))
         for fname in images:
             cnt += 1
+            sid = fname.split('.')[0]
             obj = dict()            
             obj["class"] = c
-            obj["id"] = c
+            obj["id"] = sid
             obj["keyword"] = ""
             obj["file_name"] = fname
             if cnt > num_images:
@@ -62,6 +64,7 @@ def create_dataset_metadata(data_path="./data/zerobox",num_images = 100, test_pe
     json.dump(meta_train,open(f"{data_path}/meta_train.json","w"),indent=4)
     json.dump(meta_test,open(f"{data_path}/meta_test.json","w"),indent=4)
     json.dump(meta_all,open(f"{data_path}/meta_all.json","w"),indent=4)
+    json.dump(classes,open(f"{data_path}/meta_classes.json","w"),indent=4)
     
     return
 

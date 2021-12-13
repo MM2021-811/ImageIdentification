@@ -2,6 +2,7 @@
 # AlphaAlexNet code is based on torchvision AlexNet
 #
 import numpy as np
+from pymatting.util.util import normalize
 from torch._C import device
 from util.vearchutil import VearchUtil
 import cv2
@@ -22,6 +23,7 @@ from util.exposure_enhancement import enhance_image_exposure, get_under_n_over_c
 import json
 import pickle
 import os
+import PIL
 
 class AlphaBgTransform:
     """Adjsut image size based on alpha mask
@@ -182,55 +184,130 @@ class AlphaBgTransform:
             img = x
         return img
 
+    @staticmethod
+    def de_normalize(t:torch.tensor,mean,std):
+        inv_normalize = transforms.Normalize(
+            mean= [-m/s for m, s in zip(mean, std)],
+            std= [1/s for s in std]
+            )
+        return inv_normalize
+
 class ParameterError(Exception):
     pass
 
-class AlphaAlexNet(nn.Module):
-    """Adding Alpha BG info as a descriptor of shapes
+class AlexNet(nn.Module):
+    def __init__(self,device=None):
+        super(AlexNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels= 96, kernel_size= 11, stride=4, padding=2 )
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride= 1, padding= 2)
+        self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, stride= 1, padding= 1)
+        self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.fc1  = nn.Linear(in_features= 9216, out_features= 4096)
+        self.fc2  = nn.Linear(in_features= 4096, out_features= 4096)
+        self.fc3 = nn.Linear(in_features=4096 , out_features=10)
 
-    Args:
-        AlexNet (num_classes): default 1000
-                droput: default 0.5
-    """
-    def __init__(self, num_classes: int = 1000,dropout: float = 0.5) -> None:
-        super(AlphaAlexNet,self).__init__()
+    def forward(self,x):
 
-        self.features = nn.Sequential(
-            nn.Conv2d(4, 64, kernel_size=11, stride=4, padding=2), # channel 3->4
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(64, 192, kernel_size=5, padding=2),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(192, 384, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(384, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-        )
-
-        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout),
-            nn.Linear(256 * 6 * 6, 4096),
-            nn.ReLU(inplace=True),
-            nn.Dropout(p=dropout),
-            nn.Linear(4096, 4096),
-            nn.ReLU(inplace=True),
-            nn.Linear(4096, num_classes),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.shape[1] <=3:
-            raise ParameterError("AlphaAlexNet expecting input is 4*224*224 ARGB tensor")
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
         return x
 
+class AlphaAlexNet(nn.Module):
+    """Adding Alpha CU and CO channel info as a descriptor of shapes
+
+    Args:
+        AlphaAlexNet 
+    """
+    def __init__(self):
+        super(AlphaAlexNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=9, out_channels= 96, kernel_size= 11, stride=4, padding=2 )
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
+        self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=5, stride= 1, padding= 2)
+        self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=3, stride= 1, padding= 1)
+        self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=3, stride=1, padding=1)
+        self.conv5 = nn.Conv2d(in_channels=384, out_channels=256, kernel_size=3, stride=1, padding=1)
+        self.fc1  = nn.Linear(in_features= 9216, out_features= 4096)
+        self.fc2  = nn.Linear(in_features= 4096, out_features= 4096)
+        self.fc3 = nn.Linear(in_features=4096 , out_features=10)
+
+    def _getcuco(self,x):
+        #convert from 3 channels to 9 channels
+        mean=[0.485, 0.456, 0.406]
+        std=[0.229, 0.224, 0.225]
+        inv_normalize = transforms.Normalize(
+            mean= [-m/s for m, s in zip(mean, std)],
+            std= [1/s for s in std]
+            )
+        norm = transforms.Normalize(mean,std)
+
+        device = x.device
+        (d,c,h,w) = x.shape
+        result = torch.tensor(np.zeros((d,9,h,w),dtype="float32")).to(device)
+        for i in range(d):
+            x1 = x[i,:,:,:]
+            y = inv_normalize(x1)
+            y = y.permute(1,2,0) * 255
+            y = y.cpu().detach().numpy()
+            # (cu,co) = get_under_n_over_channel(im=y)            
+            # cu = torch.tensor(np.array(cu),dtype=torch.float32).permute(2,0,1)
+            # co = torch.tensor(np.array(co),dtype=torch.float32).permute(2,0,1)
+            # x2 = norm(cu).to(device)    
+            # x3 = norm(co).to(device)
+
+            # testing model
+            x2 = torch.transpose(x1,dim0=1,dim1=2)
+            y = Image.fromarray(np.uint8(y))
+            x3 = PIL.ImageOps.invert(y)
+            x3 = torch.tensor(np.array(x3),dtype=torch.float32).permute(2,0,1)
+            x3 = norm(x3)
+
+            result[i,0:3,:,:] = x1
+            result[i,3:6,:,:] = x2
+            result[i,6:9,:,:] = x3
+        
+        return result
+
+    def features(self,x):
+        # convert 3 channel to 9 chanel
+        x = self._getcuco(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+
+        return x
+    def forward(self,x):
+        # convert 3 channel to 9 chanel
+        x = self._getcuco(x)
+        x = F.relu(self.conv1(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv2(x))
+        x = self.maxpool(x)
+        x = F.relu(self.conv3(x))
+        x = F.relu(self.conv4(x))
+        x = F.relu(self.conv5(x))
+        x = self.maxpool(x)
+        x = x.reshape(x.shape[0], -1)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 class AlphaWeightedVgg16Net(nn.Module):
     def __init__(self,device="cpu",dropout: float = 0.5) -> None:
@@ -244,12 +321,12 @@ class AlphaWeightedVgg16Net(nn.Module):
             nn.Linear(512, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
-            nn.Linear(4096, 2048),
-            nn.ReLU(inplace=True),
-             nn.Dropout(p=dropout),
-            nn.Linear(2048, 1024),
-            nn.ReLU(inplace=True),
-            nn.Linear(1024, 512),
+            # nn.Linear(4096, 2048),
+            # nn.ReLU(inplace=True),
+            #  nn.Dropout(p=dropout),
+            # nn.Linear(2048, 1024),
+            # nn.ReLU(inplace=True),
+            nn.Linear(4096, 512),
         )
         
         self.discritor = nn.Sequential(
@@ -293,17 +370,15 @@ class AlphaWeightedAlexNet(nn.Module):
             nn.Linear(256 * 6 * 6, 4096),
             nn.ReLU(inplace=True),
             nn.Dropout(p=dropout),
-            nn.Linear(4096, 2048),
-            nn.ReLU(inplace=True),
-            nn.Linear(2048, 1024),
-            nn.Linear(1024, 512),
+            nn.Linear(4096, 4096),
+            nn.Linear(4096, 512),
         )
 
         self.discritor = nn.Sequential(
-            nn.Linear(2 * 512, 2048),
-            nn.Linear(2048, 512),
-            nn.Linear(512, 2),
-            nn.Softmax(1)
+            nn.Linear(2 * 512, 4096),
+            nn.Linear(4096, 2),
+            # nn.Softmax(1)
+            nn.Sigmoid()
         )
 
     def _features(self,x):
@@ -318,6 +393,60 @@ class AlphaWeightedAlexNet(nn.Module):
         x = self.feat_layer(x)
         return x
 
+    def forward(self, x1):
+
+        x1 = self.features(x1)
+        x1 = x1.view(x1.size()[0], -1)#make it suitable for fc layer.
+
+        x2 = self.features(x2)
+        x2 = x2.view(x2.size()[0], -1)#make it suitable for fc layer.
+
+        x3 = self.features(x3)
+        x3 = x3.view(x3.size()[0], -1)#make it suitable for fc layer.
+
+        output = torch.cat((x1, x2),1)
+        output = self.discritor(output)
+        return output
+
+class SiameseAlexNet(nn.Module):
+    def __init__(self,device="cpu",dropout: float = 0.5) -> None:
+        super().__init__()
+        self.alexnet = models.alexnet(pretrained=True)
+        self.alexnet.to(device)
+        self.alexnet.eval()
+        self.device = device
+
+        self.avgpool = nn.AdaptiveAvgPool2d((6, 6))
+        self.feat_layer = nn.Sequential(
+            nn.Linear(256 * 6 * 6, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 4096),
+            nn.Linear(4096, 512),
+        )
+
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=dropout),
+            nn.Linear(18432, 4096),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=dropout),
+            nn.Linear(4096, 4096),
+            nn.ReLU(inplace=True),
+            nn.Linear(4096, 2),
+        )
+
+        
+    def _features(self,x):
+        with torch.no_grad():
+            x = self.alexnet.features(x)
+        return x
+
+    def features(self,x):
+        x = self._features(x)
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        return x
+
     def forward(self, input1, input2):
         output1 = self.features(input1)
         output1 = output1.view(output1.size()[0], -1)#make it suitable for fc layer.
@@ -325,8 +454,23 @@ class AlphaWeightedAlexNet(nn.Module):
         output2 = output2.view(output2.size()[0], -1)
 
         output = torch.cat((output1, output2),1)
-        output = self.discritor(output)
+        output = self.classifier(output)
         return output
+
+    def predict(self,image1, image2):
+        transform = transforms.Compose([
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            AlphaBgTransform(alpha=False),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        with torch.no_grad():
+            img1 = transform(image1).unsqueeze(0).to(self.device)
+            img2 = transform(image2).unsqueeze(0).to(self.device)
+            x = F.softmax(self.forward(img1,img2))
+            return x
+
 
 class SiameseLoader(object):
     def __init__(self,data_path="./data/zerobox_nobg", train=True, batch_size=64,shuffle=True, use_cache=True) -> None:
@@ -341,13 +485,20 @@ class SiameseLoader(object):
         else:
             meta_file = f"{self.data_path}/meta_test.json"
 
+        c_file = f"{self.data_path}/meta_classes.json"
+        self.classes = json.load(open(c_file,"r"))
         self.data = json.load(open(meta_file,"r"))
-        self._init_maping(shuffle)
+
+        # self._init_maping(shuffle)
         self._load_data_to_memory()
         
-        
 
-    def __iter__(self):
+    def __len__(self):
+        #    return len(self.data_idx)
+        n = len(self.images) 
+        return n * 10 * 10
+
+    def __iter2__(self):
         batchid = 0
         i = 0
         data1 = np.zeros((self.batch_size,3,224,224),dtype="float32")
@@ -368,10 +519,10 @@ class SiameseLoader(object):
                 data2 = np.zeros((self.batch_size,3,224,224),dtype="float32")
                 labels = np.zeros((self.batch_size,2))
                 batchid += 1
-            elif i >= len(self.data_idx):
-                # last not whole batch
-                yield (data1,data2,labels)
-
+        idx = i % self.batch_size
+        if idx > 0:
+            # last not whole batch
+            yield (data1[:idx,:,:],data2[:idx,:,:],labels[:idx,:,:])
 
     def get_batch_data(self,i, j):
         img1 = self.images[i]
@@ -384,9 +535,6 @@ class SiameseLoader(object):
             label = [0,1]
         return (img1.numpy(), img2.numpy(), label)
 
-    def __len__(self):
-       return len(self.data_idx)
-
     def _init_maping(self,shuffle):
         n = len(self.data)
         total = (3*n)**2
@@ -398,7 +546,7 @@ class SiameseLoader(object):
         if shuffle is True:
             np.random.shuffle(self.data_idx)
 
-    def _load_data_to_memory(self):
+    def _load_data_to_memory2(self):
         cache_file = f"{self.data_path}/siamese_data_{self.train}.pkl"
         print(f"Training {self.train} cache file: {cache_file}")
         
@@ -422,7 +570,7 @@ class SiameseLoader(object):
         self.images = []
         self.labels = []
         for item in self.data:
-            label = item["id"]
+            label = item["class"]
             image_name = f"{self.data_path}/images/{label}/{item['file_name']}"
             img = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
             img = al_transform(img)
@@ -442,7 +590,121 @@ class SiameseLoader(object):
         pickle.dump(data,open(cache_file,"wb"))
 
 
+    def _load_data_to_memory(self):
+        cache_file = f"{self.data_path}/siamese_data_{self.train}_1.pkl"
+        print(f"Training {self.train} cache file: {cache_file}")
+        
+        if self.use_cache is True:
+            if os.path.exists(cache_file):
+                try:
+                    data = pickle.load(open(cache_file,"rb"))
+                    self.images = data["images"]
+                    self.cls_images = data["cls_images"]
+                    return
+                except:
+                    pass
 
+        al_transform = AlphaBgTransform(alpha=False)
+        transform = transforms.Compose([
+            # transforms.Resize(224),
+            # transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        self.images = dict()
+        self.cls_images = dict()
+        for cls in self.classes:
+            self.cls_images[cls] = []            
+
+        for item in self.data:
+            label = item["class"]
+            key = f"{label}_{item['file_name']}"
+            image_name = f"{self.data_path}/images/{label}/{item['file_name']}"
+            img = cv2.imread(image_name,cv2.IMREAD_UNCHANGED)
+            img = al_transform(img)
+            (cu,co) = get_under_n_over_channel(im=img)
+            img = transform(img)
+            cu = transform(cu)
+            co = transform(co)
+
+            item["image"] = img
+            item["cu"] = cu
+            item["co"] = co
+            self.images[key] = item
+            self.cls_images[label].append(key)
+        
+        classes = list(self.cls_images.keys())
+        for cls in classes:
+            if len(self.cls_images[cls]) == 0:
+                del self.cls_images[cls]
+
+        data = {"cls_images":self.cls_images, "images":self.images}
+        pickle.dump(data,open(cache_file,"wb"))
+
+    def __iter__(self):
+        n = len(self.images)        
+        data1 = np.zeros((10 * n,3,224,224),dtype="float32")
+        data2 = np.zeros((10 * n,3,224,224),dtype="float32")
+        labels = np.zeros((10 * n ,2))
+        idx = 0
+        # total = self.__len__()
+        cnt = 0
+        for i in range(10):
+            idx = 0
+            for key in self.images:
+                cnt += 1
+                # get 5 same class images 
+                # 2 from cu, co channel, 3 from other images
+                item = self.images[key]
+                cls = item["class"]                
+
+                data1[idx,:,:,:] = item["image"]
+                data2[idx,:,:,:] = item["cu"]
+                labels[idx,:] = [1,0]
+                idx += 1
+
+                data1[idx,:,:,:] = item["image"]
+                data2[idx,:,:,:] = item["co"]
+                labels[idx,:] = [1,0]
+                idx += 1
+                
+                skeys = self._get_random_same_class_image(cls,count=3)
+                for skey in skeys:
+                    data1[idx,:,:,:] = item["image"]
+                    data2[idx,:,:,:] = self.images[skey]["image"]
+                    labels[idx,:] = [1,0]
+                    idx += 1
+
+                # get 5 different class images random choose
+                rkeys = self._get_random_diff_class_image(cls,count=5)
+                for rkey in rkeys:
+                    data1[idx,:,:,:] = item["image"]
+                    data2[idx,:,:,:] = self.images[rkey]["image"]
+                    labels[idx,:] = [0,1]
+                    idx += 1
+            
+            yield (data1,data2,labels)
+
+    def _get_random_same_class_image(self,cls,count=3):
+        keys = self.cls_images[cls]
+        keys = np.array(keys)
+        m = np.random.choice(len(keys), size=count, replace=True)       
+        return keys[m]
+
+    def _get_random_diff_class_image(self,cls,count=5):
+        classes = list(self.cls_images.keys())
+        classes.sort()
+        classes.remove(cls)
+    
+        classes = np.array(classes)
+        m = np.random.choice(len(classes), size=count, replace=True)
+        
+        ret = []
+        for cls in classes[m]:
+            key = self._get_random_same_class_image(cls,count=1)
+            ret.append(key[0])
+
+        return ret
 
 
 
