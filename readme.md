@@ -123,7 +123,7 @@ docker-compose up -d
 
 
 # Main function and notebook
-The main notebook is report_demo.ipynb. Please reference this one for details of this project work.
+The main notebook is report_demo.ipynb. Please reference this one for details of this project work. If you don't have jupyter installed, you can open report_demo.html in browser to see the results.
 
 
 # Other files in this project
