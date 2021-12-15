@@ -54,9 +54,9 @@ The license for this repo is under MIT license. Most of dependable libraries and
 4. Alexnet Implementation
    Alexnet code is based on the source code from this [article](https://medium.com/analytics-vidhya/alexnet-a-simple-implementation-using-pytorch-30c14e8b6db2) by Toluwani Aremu 2021. 
 
-5. LA-Transformer
-  [paper](https://www.researchgate.net/publication/352209565_Person_Re-Identification_with_a_Locally_Aware_Transformer)
-  [code](https://github.com/SiddhantKapil/LA-Transformer)
+5. LA-Transformer  
+  [paper](https://www.researchgate.net/publication/352209565_Person_Re-Identification_with_a_Locally_Aware_Transformer)  
+  [code](https://github.com/SiddhantKapil/LA-Transformer)  
   ```
   @unknown{unknown,
   author = {Sharma, Charu and Kapil, Siddhant and Chapman, David},
@@ -84,6 +84,10 @@ The license for this repo is under MIT license. Most of dependable libraries and
     title = {Same Same But DifferNet: Semi-Supervised Defect Detection with Normalizing Flows}
     }
   ```
+  8. Training scripts
+    The scripts train_xxxxx.py is based on [this toturial](https://www.analyticsvidhya.com/blog/2019/10/how-to-master-transfer-learning-using-pytorch/). Author: Pulkit Sharma Year: 2019
+
+
 
 # Installation
 All commands list here are sample commands. And this is based on Linux(Ubuntu). If you are running on other OS, please issue the command accordingly to your OS.
@@ -170,7 +174,6 @@ The main notebook is report_demo.ipynb. Please reference this one for details of
 ├── test.py
 ├── train_alexnet.py
 ├── train_alphaalexnet.py
-├── train_googlenet.py
 ├── train_siamese_alexnet.py
 ├── train_siamese_vgg16net.py
 ├── util
