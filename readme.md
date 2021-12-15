@@ -199,18 +199,26 @@ The main notebook is report_demo.ipynb. Please reference this one for details of
 ├── vgg16.ipynb
 ```
 ## Some script and functions
-utl/trainingutil.py  Models of AlphaAlexNet, SiameseAlexNet
-utl/testutil.py testing and benchmark utilities
+utl/trainingutil.py  
+Models of AlphaAlexNet, SiameseAlexNet
+
+utl/testutil.py 
+
+testing and benchmark utilities
+
 Alexnet_*.ipynb Alexnet related scripts.
 
-vearch/ Vearch code(third party)
-vearch_plugin/ vearch plugin (third party)
+vearch/ 
+Vearch code(third party)
+
+vearch_plugin/ 
+vearch plugin (third party)
 
 
 
 ## Index subset image
-run `python util/load_bottles.py`. This script will load images and index them in vearch. 
-This step may requires to run based on the test cases. When using different model(vgg, resnet and etc) must index them with same model
+Please reference `report_demo.ipynb` as examples.
+
 
 ## Test different model
 The test images are listed in meta_test.json.
