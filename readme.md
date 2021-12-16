@@ -122,11 +122,39 @@ docker-compose up -d
 2. unzip the dataset and models to current folder. `tar -xvf dataset_models.tar.gz`
 
 
-# Main function and notebook
-The main notebook is report_demo.ipynb. Please reference this one for details of this project work. If you don't have jupyter installed, you can open report_demo.html in browser to see the results.
+# Our work and main notebook
+The main notebook is `report_demo.ipynb`. Please reference the file for details of this project work. If you are reading the file from github directly some images is not shown due to some issues from Github. Please read `report_demo.pdf` instead.
+
+## Our major codes
+
+1. Alexnet_xxxx.ipynb  
+  Alexnet related training notebook
+2. docker-compose.yml  
+  The Yaml file which control how to create containers for VEARCH
+3. retport_demo.ipynb or report_demo.pdf 
+  The summary of the project and it also includes entry of the code of creating image index, test each feature extration models, results of testing and other work related to this project.
+4. train_alphaalexnet.py  traning script for AlphaAlexNet.
+  train_siamesealexnet.py  training script for SiameseAlexNet. Please referece to our final report for these networks.
+5. util/trainingutil.py 
+   training relateded code. It includes the model we defined, such as AlphaAlexNet, SiameseAlexnet, cutomized Transforms class and etc.
+   
+6. util/vearchutil
+   libray code we wrote for calling Vearch API
+
+7. util/testutil
+    reuable libray code for testing purpose. 
+
+8. util/alphaalex.py
+    The code for extracting features into vector.
 
 
-# Other files in this project
+  
+  
+
+
+
+
+# File and structure in this project
 ```
 .
 ├── Alexnet_2bottle.ipynb
