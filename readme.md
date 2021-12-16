@@ -123,7 +123,7 @@ docker-compose up -d
 
 
 # Our work and main notebook
-The main notebook is `report_demo.ipynb`. Please reference the file for details of this project work. If you are reading the file from github directly some images is not shown due to some issues from Github. Please read `report_demo.pdf` instead.
+The main notebook is `report_demo.ipynb`. Please reference the file for details of this project work. If you are reading the file from github directly and some images are not shown shown correctly, please read `report_demo.pdf` instead.
 
 ## Our major codes
 
