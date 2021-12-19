@@ -142,7 +142,7 @@ The main notebook is `report_demo.ipynb`. Please reference the file for details 
    libray code we wrote for calling Vearch API
 
 7. util/testutil
-    reuable libray code for testing purpose. 
+    reuable library code for testing purpose. 
 
 8. util/alphaalex.py
     The code for extracting features into vector.
