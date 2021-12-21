@@ -123,6 +123,9 @@ docker-compose up -d
 
 
 # Our work and main notebook
+
+[Final Report](http://arxiv.org/abs/2112.10324)
+
 The main notebook is `report_demo.ipynb`. Please reference the file for details of this project work. If you are reading the file from github directly and some images are not shown shown correctly, please read `report_demo.pdf` instead.
 
 ## Our major codes
@@ -134,7 +137,7 @@ The main notebook is `report_demo.ipynb`. Please reference the file for details 
 3. retport_demo.ipynb or report_demo.pdf 
   The summary of the project and it also includes entry of the code of creating image index, test each feature extration models, results of testing and other work related to this project.
 4. train_alphaalexnet.py  traning script for AlphaAlexNet.
-  train_siamesealexnet.py  training script for SiameseAlexNet. Please referece to our final report for these networks.
+  train_siamesealexnet.py  training script for SiameseAlexNet. Please referece to our [final report](http://arxiv.org/abs/2112.10324) for these networks.
 5. util/trainingutil.py 
    training relateded code. It includes the model we defined, such as AlphaAlexNet, SiameseAlexnet, cutomized Transforms class and etc.
    
