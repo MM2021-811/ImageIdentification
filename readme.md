@@ -54,9 +54,9 @@ The license for this repo is under MIT license. Most of dependable libraries and
 4. Alexnet Implementation
    Alexnet code is based on the source code from this [article](https://medium.com/analytics-vidhya/alexnet-a-simple-implementation-using-pytorch-30c14e8b6db2) by Toluwani Aremu 2021. 
 
-5. LA-Transformer
-  [paper](https://www.researchgate.net/publication/352209565_Person_Re-Identification_with_a_Locally_Aware_Transformer)
-  [code](https://github.com/SiddhantKapil/LA-Transformer)
+5. LA-Transformer  
+  [paper](https://www.researchgate.net/publication/352209565_Person_Re-Identification_with_a_Locally_Aware_Transformer)  
+  [code](https://github.com/SiddhantKapil/LA-Transformer)  
   ```
   @unknown{unknown,
   author = {Sharma, Charu and Kapil, Siddhant and Chapman, David},
@@ -84,6 +84,10 @@ The license for this repo is under MIT license. Most of dependable libraries and
     title = {Same Same But DifferNet: Semi-Supervised Defect Detection with Normalizing Flows}
     }
   ```
+  8. Training scripts
+    The scripts train_xxxxx.py is based on [this toturial](https://www.analyticsvidhya.com/blog/2019/10/how-to-master-transfer-learning-using-pytorch/). Author: Pulkit Sharma Year: 2019
+
+
 
 # Installation
 All commands list here are sample commands. And this is based on Linux(Ubuntu). If you are running on other OS, please issue the command accordingly to your OS.
@@ -118,11 +122,42 @@ docker-compose up -d
 2. unzip the dataset and models to current folder. `tar -xvf dataset_models.tar.gz`
 
 
-# Main function and notebook
-The main notebook is report_demo.ipynb. Please reference this one for details of this project work.
+# Our work and main notebook
+
+[Final Report](http://arxiv.org/abs/2112.10324)
+
+The main notebook is `report_demo.ipynb`. Please reference the file for details of this project work. If you are reading the file from github directly and some images are not shown shown correctly, please read `report_demo.pdf` instead.
+
+## Our major codes
+
+1. Alexnet_xxxx.ipynb  
+  Alexnet related training notebook
+2. docker-compose.yml  
+  The Yaml file which control how to create containers for VEARCH
+3. retport_demo.ipynb or report_demo.pdf 
+  The summary of the project and it also includes entry of the code of creating image index, test each feature extration models, results of testing and other work related to this project.
+4. train_alphaalexnet.py  traning script for AlphaAlexNet.
+  train_siamesealexnet.py  training script for SiameseAlexNet. Please referece to our [final report](http://arxiv.org/abs/2112.10324) for these networks.
+5. util/trainingutil.py 
+   training relateded code. It includes the model we defined, such as AlphaAlexNet, SiameseAlexnet, cutomized Transforms class and etc.
+   
+6. util/vearchutil
+   libray code we wrote for calling Vearch API
+
+7. util/testutil
+    reuable library code for testing purpose. 
+
+8. util/alphaalex.py
+    The code for extracting features into vector.
 
 
-# Other files in this project
+  
+  
+
+
+
+
+# File and structure in this project
 ```
 .
 ├── Alexnet_2bottle.ipynb
@@ -170,7 +205,6 @@ The main notebook is report_demo.ipynb. Please reference this one for details of
 ├── test.py
 ├── train_alexnet.py
 ├── train_alphaalexnet.py
-├── train_googlenet.py
 ├── train_siamese_alexnet.py
 ├── train_siamese_vgg16net.py
 ├── util
@@ -199,18 +233,26 @@ The main notebook is report_demo.ipynb. Please reference this one for details of
 ├── vgg16.ipynb
 ```
 ## Some script and functions
-utl/trainingutil.py  Models of AlphaAlexNet, SiameseAlexNet
-utl/testutil.py testing and benchmark utilities
+utl/trainingutil.py  
+Models of AlphaAlexNet, SiameseAlexNet
+
+utl/testutil.py 
+
+testing and benchmark utilities
+
 Alexnet_*.ipynb Alexnet related scripts.
 
-vearch/ Vearch code(third party)
-vearch_plugin/ vearch plugin (third party)
+vearch/ 
+Vearch code(third party)
+
+vearch_plugin/ 
+vearch plugin (third party)
 
 
 
 ## Index subset image
-run `python util/load_bottles.py`. This script will load images and index them in vearch. 
-This step may requires to run based on the test cases. When using different model(vgg, resnet and etc) must index them with same model
+Please reference `report_demo.ipynb` as examples.
+
 
 ## Test different model
 The test images are listed in meta_test.json.
